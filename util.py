@@ -1,9 +1,22 @@
 import os
 import pickle
+import multiprocessing as mp
+
+NUM_CORES = 16
 
 def eprint(message):
   print("[-] {}".format(message))
   exit(0)
+
+def get_pool():
+  return mp.Pool(NUM_CORES)
+
+def end_pool(p):
+  p.close()
+  p.join()
+
+def exec_cmd(cmd: str):
+  os.system(cmd)
 
 def write_pickle(path: str, data):
   with open(path, "wb") as f:

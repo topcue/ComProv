@@ -279,7 +279,7 @@ class Binary:
 ## =============================================================================
 
 def build_dataset(arch: str):
-  dump_path = "dump/{}".format(arch)
+  dump_path = "storage/assemly{}".format(arch)
   file_names = get_file_names(dump_path)
   num_files = len(file_names)
   

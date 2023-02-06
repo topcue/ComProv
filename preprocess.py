@@ -1,27 +1,9 @@
 from util import *
 
-import multiprocessing as mp
 import os
 
 ARCH = ["arm_32", "arm_64", "x86_32", "x86_64", \
         "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
-
-
-##! ===================== TODO: move to utils =====================
-
-NUM_CORES = 4
-
-def get_pool():
-  return mp.Pool(NUM_CORES)
-
-def end_pool(p):
-  p.close()
-  p.join()
-
-def exec_cmd(cmd: str):
-  os.system(cmd)
-
-##! ===============================================================
 
 ##! Directories composed of package names are located in the src_path.
 def flatten(src_dir_path, dst_dir_path):
@@ -74,11 +56,11 @@ def dump(src_dir_path, dst_dir_path):
   file_names = os.listdir(src_dir_path)
   file_names.sort()
   
-  objdump_path = "storage/tools/llvm-objdump"
+  objdump_path = "tools/llvm-objdump"
   objdump_options = "--disassemble --section=.text --no-show-raw-insn --no-print-imm-hex"
   cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
 
-  for file_name in file_names[:1000]:
+  for file_name in file_names:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
     if file_name.endswith(".elf"): file_name = file_name[:-4]
@@ -90,20 +72,19 @@ def dump(src_dir_path, dst_dir_path):
 
 
 
-def foo(file_data):
+def foo(file_name, src_dir_path, dst_dir_path):
+  file_path = os.path.join(src_dir_path, file_name)
+  file_data = read_file(file_path)
   new_file_data = []
   file_data = file_data[5:]
   for line in file_data:
     # print("[DEBUG]", line)
-    if not line: continue
-    elif line == "...": continue ##! skipped zeros
-    elif line.endswith(':'):
-      ##! funcion or data symbol
+    if not line or "..." in line: continue ##! "..." means skipped zeros
+    elif line.endswith(':'): ##! symbol
       addr, symbol = line.split(' ')
       if '$' in symbol: continue ##! data symbol
-      symbol = symbol[:-1] ##! <func>: -> <func>
-      new_line = ''
-      new_line = "%s :: %s :: %s" % ('s', addr, symbol)
+      symbol = symbol[:-1] ##! <func>: => <func>
+      new_line = "\n%s :: %s :: %s" % ('s', addr, symbol)
     else:
       ##! insn or data
       if ".word" in line:
@@ -126,31 +107,28 @@ def foo(file_data):
         if not insn: continue ##! <unknown>
       new_line = "%s :: %s :: %s" % ('i', addr, insn)
     new_file_data.append(new_line + '\n')
-
-  return new_file_data
+  
+  target_path = os.path.join(dst_dir_path, file_name)
+  print("[*]", file_name)
+  write_file(target_path, new_file_data)
 
 def truncate(src_dir_path, dst_dir_path):
+  p = get_pool()
   file_names = os.listdir(src_dir_path)
   file_names.sort()
 
-  for file_name in file_names[:1]:
-    print("[*]", file_name)
-    file_path = os.path.join(src_dir_path, file_name)
-    file_data = read_file(file_path)
-    new_file_data = foo(file_data)
-
-    target_path = os.path.join("tmp", file_name)
-    # target_path = os.path.join(dst_dir_path, file_name)
-    with open(target_path, "w") as f:
-      f.writelines(new_file_data)
+  for file_name in file_names:
+    p.apply_async(func=foo, args=(file_name, src_dir_path, dst_dir_path, ))
+  end_pool(p)
+    
 
 
 
 def main():
   # flatten("storage/original", "storage/binary/renamed")
   # rename("storage/binary/renamed", "storage/binary/renamed")
-  dump("storage/binary/renamed", "storage/assembly/dump")
-  # truncate("storage/assembly/dump", "storage/assembly/dump")
+  # dump("storage/binary/renamed", "storage/assembly/dump")
+  truncate("storage/assembly/dump", "storage/assembly/parsed")
 
   pass
 
