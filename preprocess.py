@@ -72,7 +72,7 @@ def dump(src_dir_path, dst_dir_path):
 
 
 
-def foo(file_name, src_dir_path, dst_dir_path):
+def truncate_single(file_name, src_dir_path, dst_dir_path):
   file_path = os.path.join(src_dir_path, file_name)
   file_data = read_file(file_path)
   new_file_data = []
@@ -85,16 +85,11 @@ def foo(file_name, src_dir_path, dst_dir_path):
       if '$' in symbol: continue ##! data symbol
       symbol = symbol[:-1] ##! <func>: => <func>
       new_line = "\n%s :: %s :: %s" % ('s', addr, symbol)
-    else:
-      ##! insn or data
-      if ".word" in line:
-        continue ##! data
-
+    else: ##! insn or data
+      if ".word" in line: continue ##! data
       spl = line.split(':')
       addr = spl[0]
-      insn = ''.join(spl[1:])
-      
-      insn = insn.strip()
+      insn = ''.join(spl[1:]).strip()
       if insn.find("@ ") > 0:
         idx = insn.find("@ ")
         insn = insn[:idx].strip()
@@ -118,9 +113,8 @@ def truncate(src_dir_path, dst_dir_path):
   file_names.sort()
 
   for file_name in file_names:
-    p.apply_async(func=foo, args=(file_name, src_dir_path, dst_dir_path, ))
+    p.apply_async(func=truncate_single, args=(file_name, src_dir_path, dst_dir_path, ))
   end_pool(p)
-    
 
 
 
@@ -128,7 +122,10 @@ def main():
   # flatten("storage/original", "storage/binary/renamed")
   # rename("storage/binary/renamed", "storage/binary/renamed")
   # dump("storage/binary/renamed", "storage/assembly/dump")
-  truncate("storage/assembly/dump", "storage/assembly/parsed")
+  # truncate("storage/assembly/dump", "storage/assembly/parsed")
+
+  ##! split w/ arch from parsed dir to arch/{arch} dir
+
 
   pass
 
