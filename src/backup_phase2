@@ -1,0 +1,38 @@
+  def get_xs2(self):
+    lst = self.lst
+    funcs = self.funcs
+    num_func = self.num_func
+    arch = self.arch
+    total_insn = self.total_insn
+
+    x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
+    if arch == "x86_64":
+      cnt1 = 0
+      cnt2 = 0
+      for insn in lst:
+        if insn.startswith("mov"):
+          regs = self.get_reg(insn)
+          if len(regs) == 2:
+            if regs[1] == "0x0":
+              cnt1 += 1
+        elif insn.startswith("xor"):
+          regs = self.get_reg(insn)
+          if len(regs) == 2:
+            if regs[0] == regs[1]:
+              cnt2 += 1
+      
+      # if not cnt2: cnt2 = 1
+      if cnt1 == 0: cnt1 = 1
+      if cnt2 == 0: cnt2 = 1
+      x1 = cnt1
+      x2 = cnt2
+      x3 = round(cnt2/cnt1, 3)
+    else:
+      eprint("error")
+    
+    self.x1 = x1
+    self.x2 = x2
+    self.x3 = x3
+    self.x4 = x4
+    self.x5 = x5
+    self.x6 = x6
