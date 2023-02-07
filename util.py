@@ -2,7 +2,7 @@ import os
 import pickle
 import multiprocessing as mp
 
-NUM_CORES = 16
+NUM_CORES = 12
 
 def eprint(message):
   print("[-] {}".format(message))

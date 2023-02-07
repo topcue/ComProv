@@ -2,8 +2,8 @@ from util import *
 
 import os
 
-ARCH = ["arm_32", "arm_64", "x86_32", "x86_64", \
-        "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
+##! Suppose as mips eq mipseb
+ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64"]
 
 ##! Directories composed of package names are located in the src_path.
 def flatten(src_dir_path, dst_dir_path):
@@ -12,8 +12,8 @@ def flatten(src_dir_path, dst_dir_path):
   
   for package_dir_name in os.listdir(src_dir_path):
     package_dir_path = os.path.join(src_dir_path, package_dir_name)
-    ##! Choose cp or mv
-    cmd = "cp %s/* %s" % (package_dir_path, dst_dir_path)
+    ##! cp occurs 'Argument list too long error'
+    cmd = "for i in %s/*; do cp \"$i\" %s; done" % (package_dir_path, dst_dir_path)
     print("[*]", package_dir_name)
 
     p.apply_async(func=exec_cmd, args=(cmd, ))
@@ -31,6 +31,11 @@ def rename(src_dir_path, dst_dir_path):
     spl = file_name.split("_")
     pkg, comp, arch, opti = spl[0], spl[1], spl[2] + "_" + spl[3], spl[4]
     bin_name = '_'.join(spl[5:])
+    
+    ##! filtering mipseb_32/64 here
+    if arch in ("mipseb_32", "mipseb_64"): continue
+
+    bin_name = bin_name.replace('_', '-')
 
     ##! Rename Ofast to Of
     if opti == "Ofast": opti = "Of"
@@ -42,8 +47,6 @@ def rename(src_dir_path, dst_dir_path):
 
     src_file_path = os.path.join(src_dir_path, file_name)
     dst_file_path = os.path.join(dst_dir_path, new_name)
-    
-    ##! Choose cp or mv
     cmd = "mv %s %s" % (src_file_path, dst_file_path)
     
     p.apply_async(func=exec_cmd, args=(cmd, ))
@@ -52,6 +55,7 @@ def rename(src_dir_path, dst_dir_path):
 
 def dump(src_dir_path, dst_dir_path):
   p = get_pool()
+  os.system("mkdir -p %s" % (dst_dir_path))
 
   file_names = os.listdir(src_dir_path)
   file_names.sort()
@@ -60,7 +64,7 @@ def dump(src_dir_path, dst_dir_path):
   objdump_options = "--disassemble --section=.text --no-show-raw-insn --no-print-imm-hex"
   cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
 
-  for file_name in file_names:
+  for file_name in file_names[50000:]:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
     if file_name.endswith(".elf"): file_name = file_name[:-4]
@@ -109,6 +113,8 @@ def truncate_single(file_name, src_dir_path, dst_dir_path):
 
 def truncate(src_dir_path, dst_dir_path):
   p = get_pool()
+  os.system("mkdir -p %s" % (dst_dir_path))
+
   file_names = os.listdir(src_dir_path)
   file_names.sort()
 
@@ -117,15 +123,27 @@ def truncate(src_dir_path, dst_dir_path):
   end_pool(p)
 
 
+def separate_by_arch(src_dir_path, dst_dir_path):
+  for arch in ARCH_LIST:
+    os.system("mkdir -p %s" % (os.path.join(dst_dir_path, arch)))
+
+  file_names = os.listdir(src_dir_path)
+  file_names.sort()
+
+  for file_name in file_names[:1]:
+    print(file_name)
+    spl = file_name.split("_")
+    print(spl)
+
 
 def main():
-  # flatten("storage/original", "storage/binary/renamed")
-  # rename("storage/binary/renamed", "storage/binary/renamed")
-  # dump("storage/binary/renamed", "storage/assembly/dump")
+  # flatten("storage/original", "storage/binary/flatten")
+  # rename("storage/binary/flatten", "storage/binary/renamed")
+  dump("storage/binary/renamed", "storage/assembly/dump")
   # truncate("storage/assembly/dump", "storage/assembly/parsed")
 
   ##! split w/ arch from parsed dir to arch/{arch} dir
-
+  # separate_by_arch("storage/assembly/parsed", "storage/assembly/arch")
 
   pass
 
