@@ -30,14 +30,13 @@ def get_bracket_operand(x):
 
 class Binary:
   def __init__(self, name, path, arch):
-    dumped_file_data = read_file(path)
-    funcs = parse_functions(dumped_file_data)
+    funcs = parse_functions(path)
     # lst = funcs_to_list(funcs)
 
     self.name = path
     self.path = path
     # self.lst = lst
-    self.funcs = funcs
+    # self.funcs = funcs
     # self.get_general_info()
     eprint("exit here")
     exit()
@@ -279,7 +278,7 @@ class Binary:
 ## =============================================================================
 
 def build_dataset(arch: str):
-  dump_path = "storage/assemly{}".format(arch)
+  dump_path = "storage/assembly/truncate/%s" % (arch)
   file_names = get_file_names(dump_path)
   num_files = len(file_names)
   

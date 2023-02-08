@@ -2,7 +2,7 @@ import os
 import pickle
 import multiprocessing as mp
 
-NUM_CORES = 12
+NUM_CORES = 4
 
 def eprint(message):
   print("[-] {}".format(message))
@@ -72,6 +72,11 @@ def is_symbol(line):
   if line.startswith('s'): return True
   return False
 
+def is_insn(line):
+  if not line: return False
+  if line.startswith('i'): return True
+  return False
+  
 def get_optmz(file_name):
   if "O0" in file_name: return 0
   elif "O1" in file_name: return 1

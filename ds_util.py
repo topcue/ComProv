@@ -22,21 +22,22 @@ def get_opcode(insn: str):
 
 ##! ============================================================================
 
-def parse_functions(dumped_file_data):
+def parse_functions(file_path):
   ##! DEBUG
-  data = dumped_file_data[:100]
+  data = read_file(file_path)
+  if not data[0]: data = data[1:]
   funcs = {}
   max_len = len(data)
-
+    
   for line in data:
-    print(line)
+    print("[DEBUG] ", line, len(line))
 
   ##! step1
   ## parse the instructions at the beginning of the .text section
   ## in particular, in the mips architecture, the main() function
   ## is inlined here by optimization
   start_ptr = -1
-  if is_symbol(data[0]):
+  if is_symbol(data[0]) or not data[0]:
     start_ptr = 0
   else:
     next_idx = 0
@@ -45,26 +46,32 @@ def parse_functions(dumped_file_data):
       if not line:
         break
       next_idx += 1
-    funcs["<!_init_dummy>"] = data[0:next_idx]
+    funcs["<!_dummy_func>"] = data[0:next_idx]
     start_ptr = next_idx + 1
 
-  eprint("123")
   ##! step2: parse function by function
   curr_idx = start_ptr
   while(curr_idx < max_len):
     line = data[curr_idx]
     if is_symbol(line):
       curr_func_name = line
-      ##! `curr_idx + 1` is function prologue
       next_idx = curr_idx + 1
-      while data[next_idx]:
-        next_idx += 1
-      ##! `last_idx` is function epilogue
+      while data[next_idx]: next_idx += 1
       funcs[curr_func_name] = data[curr_idx+1:next_idx]
       ##! skip empty string after end of single function
       curr_idx = next_idx + 1
     else:
       eprint("parse error!")
+
+  ##! TODO: Fix me
+  # ##! trim
+  # for symbol, insns in funcs.items():
+  #   print("[!]", symbol)
+  #   new_symbol = []
+  #   for insn in insns:
+  #     new_insn = insn.replace("i :: ", '')
+  #     new_symbol.apppend(new_insn)
+  #   funcs[new_symbol] = my_dict.pop(old_key)
 
   return funcs
 
