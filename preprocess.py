@@ -64,7 +64,7 @@ def dump(src_dir_path, dst_dir_path):
   objdump_options = "--disassemble --section=.text --no-show-raw-insn --no-print-imm-hex"
   cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
 
-  for file_name in file_names[50000:]:
+  for file_name in file_names:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
     if file_name.endswith(".elf"): file_name = file_name[:-4]
@@ -74,7 +74,15 @@ def dump(src_dir_path, dst_dir_path):
     p.apply_async(func=exec_cmd, args=(cmd, ))
   end_pool(p)
 
-
+def get_file_info(file_name):
+  spl = file_name.split('_')
+  file_info = {
+     "pkg": spl[0],
+     "bin_name": spl[1],
+     "compiler": spl[2],
+     "arch": '_'.join(spl[3:5]),
+     "opti": spl[5].replace(".txt", "") }
+  return file_info
 
 def truncate_single(file_name, src_dir_path, dst_dir_path):
   file_path = os.path.join(src_dir_path, file_name)
@@ -82,7 +90,6 @@ def truncate_single(file_name, src_dir_path, dst_dir_path):
   new_file_data = []
   file_data = file_data[5:]
   for line in file_data:
-    # print("[DEBUG]", line)
     if not line or "..." in line: continue ##! "..." means skipped zeros
     elif line.endswith(':'): ##! symbol
       addr, symbol = line.split(' ')
@@ -107,13 +114,19 @@ def truncate_single(file_name, src_dir_path, dst_dir_path):
       new_line = "%s :: %s :: %s" % ('i', addr, insn)
     new_file_data.append(new_line + '\n')
   
-  target_path = os.path.join(dst_dir_path, file_name)
+  file_info = get_file_info(file_name)
+  arch = file_info["arch"]
+  dst_file_path = os.path.join(dst_dir_path, arch, file_name)
+  
   print("[*]", file_name)
-  write_file(target_path, new_file_data)
+  write_file(dst_file_path, new_file_data)
 
 def truncate(src_dir_path, dst_dir_path):
   p = get_pool()
+  
   os.system("mkdir -p %s" % (dst_dir_path))
+  for arch in ARCH_LIST:
+    os.system("mkdir -p %s" % (os.path.join(dst_dir_path, arch)))
 
   file_names = os.listdir(src_dir_path)
   file_names.sort()
@@ -123,27 +136,11 @@ def truncate(src_dir_path, dst_dir_path):
   end_pool(p)
 
 
-def separate_by_arch(src_dir_path, dst_dir_path):
-  for arch in ARCH_LIST:
-    os.system("mkdir -p %s" % (os.path.join(dst_dir_path, arch)))
-
-  file_names = os.listdir(src_dir_path)
-  file_names.sort()
-
-  for file_name in file_names[:1]:
-    print(file_name)
-    spl = file_name.split("_")
-    print(spl)
-
-
 def main():
   # flatten("storage/original", "storage/binary/flatten")
   # rename("storage/binary/flatten", "storage/binary/renamed")
-  dump("storage/binary/renamed", "storage/assembly/dump")
-  # truncate("storage/assembly/dump", "storage/assembly/parsed")
-
-  ##! split w/ arch from parsed dir to arch/{arch} dir
-  # separate_by_arch("storage/assembly/parsed", "storage/assembly/arch")
+  # dump("storage/binary/renamed", "storage/assembly/dump")
+  # truncate("storage/assembly/dump", "storage/assembly/truncate")
 
   pass
 
