@@ -8,7 +8,7 @@ def eprint(message):
   print("[-] {}".format(message))
   exit(0)
 
-def get_pool():
+def get_pool(num_cores=NUM_CORES):
   return mp.Pool(NUM_CORES)
 
 def end_pool(p):

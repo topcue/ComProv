@@ -99,9 +99,10 @@ def filter(binary, DEBUG=False):
     prefilter = strong_filter + weak_filter
   else:
     eprint("Arch Error!")
-  
+
+  function_symbols = funcs.keys()
   for intrinsic in prefilter:
-    if intrinsic in funcs.keys():
+    if intrinsic in function_symbols:
       del funcs[intrinsic]
 
   if arch in ["x86_32", "x86_64"]:
@@ -114,7 +115,7 @@ def filter(binary, DEBUG=False):
       if len(func_insns) > 30: continue
       is_contain_call = False
       for insn in func_insns:
-        if insn.startswith(call_insn):
+        if insn["Insn"].startswith(call_insn):
           is_contain_call = True
           break
       if not is_contain_call:
@@ -136,7 +137,11 @@ def filter(binary, DEBUG=False):
 
   func_to_del = list(set(func_to_del))
 
+  ##! TODO: Fix me
   for func_name in func_to_del:
+    # print("[!]", func_name)
+    # for insn in funcs[func_name]:
+    #   print(insn["Insn"])
     del funcs[func_name]
 
   lst = funcs_to_list(funcs)
@@ -146,7 +151,7 @@ def filter(binary, DEBUG=False):
 
   ##! DEBUG: write filtered file
   if DEBUG:
-    write_file_from_funcs("dump/filt/{}".format(binary.name), binary.funcs)
+    write_file_from_funcs("debug/{}".format(binary.name), binary.funcs)
   
   return binary
 

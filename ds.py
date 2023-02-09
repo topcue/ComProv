@@ -30,7 +30,7 @@ class Binary:
     funcs = parse_functions(path)
     lst = funcs_to_list(funcs)
 
-    self.name = path
+    self.name = name
     self.path = path
     self.lst = lst
     self.funcs = funcs
@@ -271,32 +271,63 @@ class Binary:
 
 ## =============================================================================
 
+def get_bin(file_name, file_path, arch, bin_list):
+  binary = Binary(file_name, file_path, arch)
+  binary = filter(binary, False)
+  bin_list.append(binary)
+
+def read_pickle_wrap(file_path, bin_list):
+  binary = read_pickle(file_path)
+  bin_list.append(binary)
+
 def build_dataset(arch: str):
+  
   dump_path = "storage/assembly/truncate/%s" % (arch)
   file_names = get_file_names(dump_path)
-  num_files = len(file_names)
   
   ##! DEBUG
-  # for file_idx in range(0, 1):
-  for file_idx in range(num_files):
-    file_name = file_names[file_idx]
-    print("[*] ({} / {}) {}".format(file_idx+1, num_files, file_name))
-    
-    ##! DEBUG
-    use_pickle = False
+  use_pickle = True
+  os.system("mkdir -p %s" % (os.path.join("pkl", arch)))
+  pkl_path = os.path.join("pkl", arch)
+
+  bin_list = mp.Manager().list()
+
+  p = get_pool()
+  for file_name in file_names:    
     if use_pickle:
-      pkl_path = "pkl/" + arch + "/" + file_name[:-3] + "pkl"
-      binary = read_pickle(pkl_path)
+      file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
+      p.apply_async(func=read_pickle_wrap, args=(file_path, bin_list, ))
     else:
       file_path = os.path.join(dump_path, file_name)
-      binary = Binary(file_name, file_path, arch)
-      # binary = filter(binary, False)
-    
-      # write_pickle(pkl_path, binary)
+      p.apply_async(func=get_bin, args=(file_name, file_path, arch, bin_list, ))
+  end_pool(p)
 
-    # row = binary.get_row()
-    # dataset_rows.append(row)
-  
+  # p = get_pool()
+  # for binary in bin_list:
+  #   file_path = os.path.join(pkl_path, binary.name.replace(".txt", ".pkl"))
+  #   p.apply_async(func=write_pickle, args=(file_path, binary, ))
+  # end_pool(p)
+
+
+  ##! =======================================
+
+  ##! DEBUG
+  # for file_idx in range(0, 1):
+  # for file_idx in range(num_files):
+  #   file_name = file_names[file_idx]
+  #   print("[*] ({} / {}) {}".format(file_idx+1, num_files, file_name))
+    
+  #   if use_pickle:
+  #     pkl_path = "pkl/" + arch + "/" + file_name[:-3] + "pkl"
+  #     binary = read_pickle(pkl_path)
+  #   else:
+  #     file_path = os.path.join(dump_path, file_name)
+  #     binary = Binary(file_name, file_path, arch)
+  #     binary = filter(binary, False)
+
+  #     write_pickle(pkl_path, binary)
+  #   row = binary.get_row()
+  #   dataset_rows.append(row)
   # dataset_path = "dataset/dataset_{}.csv".format(arch) ##!
   # write_dataset(dataset_path)
 
