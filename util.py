@@ -51,20 +51,6 @@ def print_dict(dct):
     print(); print(k)
     for insn in dct[k]: print(insn)
 
-# def dict_to_list(dct):
-#   lst = []
-#   for func_name, func_insns in dct.items():
-#     lst.append(func_name)
-#     lst.extend(func_insns)
-#     lst.append('')
-#   return lst
-
-def funcs_to_list(dct):
-  lst = []
-  for func_insns in dct.values():
-    lst.extend(func_insns)
-  return lst
-
 ##! ============================================================================
 
 def is_symbol(line):

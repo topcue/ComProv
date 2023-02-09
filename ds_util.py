@@ -26,11 +26,8 @@ def parse_functions(file_path):
   ##! DEBUG
   data = read_file(file_path)
   if not data[0]: data = data[1:]
-  funcs = {}
+  tmp_funcs = {}
   max_len = len(data)
-    
-  for line in data:
-    print("[DEBUG] ", line, len(line))
 
   ##! step1
   ## parse the instructions at the beginning of the .text section
@@ -46,7 +43,7 @@ def parse_functions(file_path):
       if not line:
         break
       next_idx += 1
-    funcs["<!_dummy_func>"] = data[0:next_idx]
+    tmp_funcs["<!_dummy_func>"] = data[0:next_idx]
     start_ptr = next_idx + 1
 
   ##! step2: parse function by function
@@ -57,23 +54,31 @@ def parse_functions(file_path):
       curr_func_name = line
       next_idx = curr_idx + 1
       while data[next_idx]: next_idx += 1
-      funcs[curr_func_name] = data[curr_idx+1:next_idx]
+      tmp_funcs[curr_func_name] = data[curr_idx+1:next_idx]
       ##! skip empty string after end of single function
       curr_idx = next_idx + 1
     else:
       eprint("parse error!")
 
-  ##! TODO: Fix me
-  # ##! trim
-  # for symbol, insns in funcs.items():
-  #   print("[!]", symbol)
-  #   new_symbol = []
-  #   for insn in insns:
-  #     new_insn = insn.replace("i :: ", '')
-  #     new_symbol.apppend(new_insn)
-  #   funcs[new_symbol] = my_dict.pop(old_key)
+  funcs = {}
+  for symbol, insns in tmp_funcs.items():
+    new_symbol = symbol.split(" :: ")[-1]
+    new_insns = []
+    for insn in insns:
+      spl = insn.split(" :: ")
+      new_insn = {"Addr": spl[1], "Insn": spl[2].replace('\t', ' ')}
+      new_insns.append(new_insn)
+    funcs[new_symbol] = new_insns
 
   return funcs
+
+
+def funcs_to_list(funcs):
+  lst = []
+  for func_insns in funcs.values():
+    lst.extend(func_insns)
+  return lst
+
 
 def filter(binary, DEBUG=False):
   funcs = binary.funcs

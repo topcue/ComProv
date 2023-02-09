@@ -13,9 +13,6 @@ dataset_rows = []
 
 ##! ============================================================================
 
-def get_total_insn(funcs):
-  return sum(len(insns) for insns in funcs.values())
-
 def write_dataset(dataset_path):
   with open(dataset_path, 'w', encoding='utf-8', newline='') as f_write:
     wr = csv.writer(f_write)
@@ -31,24 +28,21 @@ def get_bracket_operand(x):
 class Binary:
   def __init__(self, name, path, arch):
     funcs = parse_functions(path)
-    # lst = funcs_to_list(funcs)
+    lst = funcs_to_list(funcs)
 
     self.name = path
     self.path = path
-    # self.lst = lst
-    # self.funcs = funcs
-    # self.get_general_info()
-    eprint("exit here")
-    exit()
+    self.lst = lst
+    self.funcs = funcs
+    self.get_general_info()
   
   def get_general_info(self):
     name = self.name
-    funcs = self.funcs
     self.arch = get_arch(name)
     self.compiler = get_compiler(name) ## TODO: Remove me
     self.optmz = get_optmz(name)
-    self.total_insn = get_total_insn(funcs)
-    self.num_func = len(funcs.keys())
+    self.total_insn = len(self.lst)
+    self.num_func = len(self.funcs.keys())
   
   def get_reg(self, insn):
     if self.arch == "x86_64": reg_set = ()
@@ -283,8 +277,8 @@ def build_dataset(arch: str):
   num_files = len(file_names)
   
   ##! DEBUG
-  for file_idx in range(0, 1):
-  # for file_idx in range(num_files):
+  # for file_idx in range(0, 1):
+  for file_idx in range(num_files):
     file_name = file_names[file_idx]
     print("[*] ({} / {}) {}".format(file_idx+1, num_files, file_name))
     
@@ -302,7 +296,7 @@ def build_dataset(arch: str):
 
     # row = binary.get_row()
     # dataset_rows.append(row)
-
+  
   # dataset_path = "dataset/dataset_{}.csv".format(arch) ##!
   # write_dataset(dataset_path)
 
