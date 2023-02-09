@@ -8,14 +8,14 @@ cd $STORAGE/sources
 wget https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-15.0.7.tar.gz
 tar -xvf llvmorg-15.0.7.tar.gz
 mv llvm-project-llvmorg-15.0.7 llvm-project
-cd llvm-project/llvm
-rm -rf build install && mkdir -p build install && cd build
 
-cmake .. -DCMAKE_BUILD_TYPE=Release --install-prefix=$STORAGE/sources/llvm-project/llvm/install
+rm -rf build install
+cmake -DCMAKE_BUILD_TYPE=Release -S llvm -B build -DCMAKE_INSTALL_PREFIX=install
 make -j 16
 make install
 
-cp ../install/bin/llvm-objdump $WORK_DIR/tools/
+# ln -s $STORAGE/sources/llvm-project/install/bin/llvm-objdump $WORK_DIR/tools/llvm-objdump
+cp $STORAGE/sources/llvm-project/install/bin/llvm-objdump $WORK_DIR/tools/llvm-objdump
 
 
 # EOF
