@@ -137,10 +137,10 @@ def truncate(src_dir_path, dst_dir_path):
 
 
 def main():
-  # flatten("storage/original", "storage/binary/flatten")
-  # rename("storage/binary/flatten", "storage/binary/renamed")
-  # dump("storage/binary/renamed", "storage/assembly/dump")
-  # truncate("storage/assembly/dump", "storage/assembly/truncate")
+  flatten("storage/original", "storage/binary/flatten")
+  rename("storage/binary/flatten", "storage/binary/renamed")
+  dump("storage/binary/renamed", "storage/assembly/dump")
+  truncate("storage/assembly/dump", "storage/assembly/truncate")
 
   pass
 
