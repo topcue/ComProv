@@ -16,11 +16,11 @@ from os.path import exists
 dataset_header = ["file_name", "o0", "o1", "o2", "o3", "os", "of"]
 dataset_rows = []
 
-def write_dataset(dataset_path):
-  with open(dataset_path, 'w', encoding='utf-8', newline='') as f_write:
-    wr = csv.writer(f_write)
-    wr.writerow(dataset_header)
-    wr.writerows(dataset_rows)
+# def write_dataset(dataset_path):
+#   with open(dataset_path, 'w', encoding='utf-8', newline='') as f_write:
+#     wr = csv.writer(f_write)
+#     wr.writerow(dataset_header)
+#     wr.writerows(dataset_rows)
 
 ##! Rename pkg_comp_arch_opti_bin -> pkg_bin_comp_arch_opti
 def rename():
@@ -45,16 +45,16 @@ def rename():
     # print(cmd)
     # os.system(cmd)
 
-def split_name(file_name):
-  spl = file_name.split("_")
+# def split_name(file_name):
+#   spl = file_name.split("_")
 
-  opti = spl[-1].replace(".elf", '')
-  arch = spl[-3] + '_' + spl[-2]
-  comp = spl[-4]
-  bin_name = '_'.join(spl[1:-4]) ##! bin_name can contain '_'
-  pkg = spl[0]
+#   opti = spl[-1].replace(".elf", '')
+#   arch = spl[-3] + '_' + spl[-2]
+#   comp = spl[-4]
+#   bin_name = '_'.join(spl[1:-4]) ##! bin_name can contain '_'
+#   pkg = spl[0]
 
-  return pkg, bin_name, comp, arch, opti
+#   return pkg, bin_name, comp, arch, opti
 
 ##! ============================================================================
 
@@ -64,21 +64,22 @@ OPTI_LIST = ["O0", "O1", "O2", "O3", "Os", "Of"]
 PKG_BIN_LIST = []
 
 def get_pkg_bin_list():
-  BASE_PATH = "/Users/topcue/Desktop/renamed_incom/"
+  BASE_PATH = "storage/assembly/truncate/x86_32"
   file_names = get_file_names(BASE_PATH)
 
   tmp_dict = dict()
   for file_name in file_names:
-    pkg, bin_name, _, _, _ = split_name(file_name)
-    pkg_bin = '_'.join([pkg, bin_name])
+    file_info = get_file_info(file_name)
+    pkg_bin = '_'.join([file_info["pkg"], file_info["bin_name"]])
     if pkg_bin not in tmp_dict.keys():
       tmp_dict[pkg_bin] = []
   
   global PKG_BIN_LIST
   PKG_BIN_LIST = list(tmp_dict.keys())
 
-  # for i in PKG_BIN_LIST:
-  #   print(i)
+  # for pkg_bin in PKG_BIN_LIST:
+  #   print(pkg_bin)
+  # print(len(PKG_BIN_LIST))
 
 def get_hash(file_path):
   BASE_CMD = "{} -O binary --only-section=.text {} {}"
@@ -171,7 +172,7 @@ def main():
   # for i in dataset_rows:
   #   print(i)
       
-  write_dataset("tmp.csv")
+  # write_dataset("tmp.csv")
 
   # for idx in range(0, len(file_names), 4):
   #   f1, f2, f3, f4 = file_names[idx], file_names[idx+1], file_names[idx+2], file_names[idx+3]
@@ -199,9 +200,7 @@ def main():
 if __name__ == "__main__":
   get_pkg_bin_list()
 
-  # rename()
-  main()
-  print(cnt1, cnt2)
+  # main()
   
   
 

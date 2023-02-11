@@ -72,18 +72,24 @@ class Binary:
     x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
 
     if arch == "x86_32":
-      cnt = lst.count("mov EBP, ESP")
-      x1 = round(cnt / num_func, 4)
-    elif arch == "x86_64":
+      cnt1, cnt2 = 0, 0
+      for insn in lst:
+        if insn["Insn"] == "movl %esp, %ebp":
+          cnt1 += 1
+        if insn["Insn"] == "nop":
+          cnt2 += 2
+      x1 = round(cnt1 / num_func, 5)
+      x2 = round(cnt2 / total_insn, 5)
+    elif arch == "x86_64": ##! renew
       cnt = lst.count("mov RBP, RSP")
       x1 = round(cnt / num_func, 4)
-    elif arch in ["mips_32"]:
+    elif arch in ["mips_32"]: ##! renew
       cnt = lst.count("or fp, sp, r0")
       x1 = round(cnt / num_func, 4)
-    elif arch == "mips_64":
+    elif arch == "mips_64": ##! renew
       cnt = lst.count("or sp, s8, r0")
       x1 = round(cnt / num_func, 4)
-    elif arch == "arm_32":
+    elif arch == "arm_32": ##! renew
       cnt1, cnt2, cnt3, cnt4, cnt5, cnt6 = 0, 0, 0, 0, 0, 0
       
       # for insn in lst:
@@ -122,7 +128,7 @@ class Binary:
 
       x1 = round(cnt1 / total_insn, 3)
       x2 = round(cnt1 / cnt_ld, 3)
-    elif arch == "arm_64":
+    elif arch == "arm_64": ##! renew!
       cnt1, cnt2, cnt3, cnt4, cnt5, cnt6 = 0, 0, 0, 0, 0, 0
       cnt_ld, cnt_ldp = 0, 0
       cnt_st, cnt_stp = 0, 0
@@ -181,7 +187,6 @@ class Binary:
   def get_xi(self):
     funcs = self.funcs
     arch = self.arch
-    
     xi = -1
 
     if arch in ["x86_32", "x86_64", "mips_64"]:
@@ -255,12 +260,13 @@ class Binary:
     self.xi = xi
 
   def get_row(self):
-    self.get_xs()
-    # x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
-    # self.x1, self.x2, self.x3, self.x4, self.x5, self.x6 = x1, x2, x3, x4, x5, x6
-    
-    # self.get_xi()
+    ##! init
+    x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
+    self.x1, self.x2, self.x3, self.x4, self.x5, self.x6 = x1, x2, x3, x4, x5, x6
     self.xi = -1
+    
+    self.get_xs()
+    # self.get_xi()
 
     row = \
       [self.name, self.optmz, \
@@ -271,65 +277,40 @@ class Binary:
 
 ## =============================================================================
 
-def get_bin(file_name, file_path, arch, bin_list):
-  binary = Binary(file_name, file_path, arch)
-  binary = filter(binary, False)
-  bin_list.append(binary)
-
-def read_pickle_wrap(file_path, bin_list):
-  binary = read_pickle(file_path)
-  bin_list.append(binary)
+def foo(file_name, dump_path, arch):
+  pkl_path = os.path.join("pkl", arch)
+  pkl_file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
+  
+  use_pickle = True
+  if use_pickle:
+    binary = read_pickle(pkl_file_path)
+  else:
+    file_path = os.path.join(dump_path, file_name)
+    binary = Binary(file_name, file_path, arch)
+    binary = filter(binary, False)
+  
+  print("[*]", binary.name)
+  # write_pickle(pkl_file_path, binary)
+  
+  row = binary.get_row()
+  dataset_rows.append(row)
 
 def build_dataset(arch: str):
+  os.system("mkdir -p %s" % (os.path.join("pkl", arch)))
   
   dump_path = "storage/assembly/truncate/%s" % (arch)
   file_names = get_file_names(dump_path)
-  
-  ##! DEBUG
-  use_pickle = True
-  os.system("mkdir -p %s" % (os.path.join("pkl", arch)))
-  pkl_path = os.path.join("pkl", arch)
-
-  bin_list = mp.Manager().list()
 
   p = get_pool()
-  for file_name in file_names:    
-    if use_pickle:
-      file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
-      p.apply_async(func=read_pickle_wrap, args=(file_path, bin_list, ))
-    else:
-      file_path = os.path.join(dump_path, file_name)
-      p.apply_async(func=get_bin, args=(file_name, file_path, arch, bin_list, ))
+  ##! DEBUG
+  # for file_name in file_names[:14000]:
+  for file_name in file_names:
+    foo(file_name, dump_path, arch)
   end_pool(p)
 
-  # p = get_pool()
-  # for binary in bin_list:
-  #   file_path = os.path.join(pkl_path, binary.name.replace(".txt", ".pkl"))
-  #   p.apply_async(func=write_pickle, args=(file_path, binary, ))
-  # end_pool(p)
-
-
-  ##! =======================================
-
-  ##! DEBUG
-  # for file_idx in range(0, 1):
-  # for file_idx in range(num_files):
-  #   file_name = file_names[file_idx]
-  #   print("[*] ({} / {}) {}".format(file_idx+1, num_files, file_name))
-    
-  #   if use_pickle:
-  #     pkl_path = "pkl/" + arch + "/" + file_name[:-3] + "pkl"
-  #     binary = read_pickle(pkl_path)
-  #   else:
-  #     file_path = os.path.join(dump_path, file_name)
-  #     binary = Binary(file_name, file_path, arch)
-  #     binary = filter(binary, False)
-
-  #     write_pickle(pkl_path, binary)
-  #   row = binary.get_row()
-  #   dataset_rows.append(row)
-  # dataset_path = "dataset/dataset_{}.csv".format(arch) ##!
-  # write_dataset(dataset_path)
+  dataset_path = "dataset/dataset_{}.csv".format(arch) ##!
+  write_dataset(dataset_path)
+  
 
 if __name__ == "__main__":
   if len(sys.argv) < 2: eprint("Arg Err!")  

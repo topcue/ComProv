@@ -113,7 +113,7 @@ def get_colors(ds):
 
 #! =============================================================================
 def display_plot(arch):
-  ds = load_dataset("new_dataset/dataset_{}.csv".format(arch))
+  ds = load_dataset("dataset/dataset_{}.csv".format(arch))
 
   ##! here
   # ds = ds[ds["compiler"].str.contains("clang")]
@@ -137,7 +137,7 @@ def select_features(ds):
   # ds = ds[ds["compiler"].str.contains("clang")]
   # ds = ds.drop(ds[ds["file_name"].str.contains("gcc-8")].index)
 
-  selected_features = ["x1", "x2", "x3"]
+  selected_features = ["x1", "x2"]
 
   print(selected_features)
   x = ds[selected_features]
@@ -147,7 +147,7 @@ def select_features(ds):
 
 #! =============================================================================
 def kfold(arch):
-  ds = load_dataset("new_dataset/dataset_{}.csv".format(arch))
+  ds = load_dataset("dataset/dataset_{}.csv".format(arch))
   ds = preprocess_ds(ds)
   x, y = select_features(ds)
 
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     exit(0)
   arch = sys.argv[1]
 
-  display_plot(arch)
+  # display_plot(arch)
   # manual_test(arch)
 
   kfold(arch)

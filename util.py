@@ -18,6 +18,16 @@ def end_pool(p):
 def exec_cmd(cmd: str):
   os.system(cmd)
 
+def get_file_info(file_name):
+  spl = file_name.split('_')
+  file_info = {
+     "pkg": spl[0],
+     "bin_name": spl[1],
+     "compiler": spl[2],
+     "arch": '_'.join(spl[3:5]),
+     "opti": spl[5].replace(".txt", "") }
+  return file_info
+
 def write_pickle(path: str, data):
   with open(path, "wb") as f:
     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
@@ -25,6 +35,7 @@ def write_pickle(path: str, data):
 def read_pickle(path: str):
   with open(path, 'rb') as f:
     data = pickle.load(f)
+  print("[*]", os.path.basename(path))
   return data
 
 def write_file(file_path, file_data):

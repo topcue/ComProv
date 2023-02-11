@@ -74,16 +74,6 @@ def dump(src_dir_path, dst_dir_path):
     p.apply_async(func=exec_cmd, args=(cmd, ))
   end_pool(p)
 
-def get_file_info(file_name):
-  spl = file_name.split('_')
-  file_info = {
-     "pkg": spl[0],
-     "bin_name": spl[1],
-     "compiler": spl[2],
-     "arch": '_'.join(spl[3:5]),
-     "opti": spl[5].replace(".txt", "") }
-  return file_info
-
 def truncate_single(file_name, src_dir_path, dst_dir_path):
   file_path = os.path.join(src_dir_path, file_name)
   file_data = read_file(file_path)
@@ -137,11 +127,10 @@ def truncate(src_dir_path, dst_dir_path):
 
 
 def main():
-  flatten("storage/original", "storage/binary/flatten")
-  rename("storage/binary/flatten", "storage/binary/renamed")
-  dump("storage/binary/renamed", "storage/assembly/dump")
-  truncate("storage/assembly/dump", "storage/assembly/truncate")
-
+  # flatten("storage/original", "storage/binary/flatten")
+  # rename("storage/binary/flatten", "storage/binary/renamed")
+  # dump("storage/binary/renamed", "storage/assembly/dump")
+  # truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
 if __name__ == "__main__":
