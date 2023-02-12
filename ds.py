@@ -3,7 +3,6 @@ from ds_util import *
 
 import sys
 import copy
-import csv
 import time
 import re 
 
@@ -12,12 +11,6 @@ dataset_header = ["file_name", "optmz", "x1", "x2", "x3", "x4", "x5", "x6",  "xi
 dataset_rows = []
 
 ##! ============================================================================
-
-def write_dataset(dataset_path):
-  with open(dataset_path, 'w', encoding='utf-8', newline='') as f_write:
-    wr = csv.writer(f_write)
-    wr.writerow(dataset_header)
-    wr.writerows(dataset_rows)
 
 def get_bracket_operand(x):
   ## e.g.) "mov A, B, [C]" -> return "C"

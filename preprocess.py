@@ -129,8 +129,9 @@ def truncate(src_dir_path, dst_dir_path):
 def main():
   # flatten("storage/original", "storage/binary/flatten")
   # rename("storage/binary/flatten", "storage/binary/renamed")
-  # dump("storage/binary/renamed", "storage/assembly/dump")
-  # truncate("storage/assembly/dump", "storage/assembly/truncate")
+  ##! dup here: renamed -> unique
+  dump("storage/binary/unique", "storage/assembly/dump")
+  truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
 if __name__ == "__main__":

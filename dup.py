@@ -1,70 +1,23 @@
 from util import *
 from ds_util import *
 
-import sys
-import copy
-import csv
-import time
-import re 
-
-import hashlib
 import random
 
 from itertools import product
 from os.path import exists
 
-dataset_header = ["file_name", "o0", "o1", "o2", "o3", "os", "of"]
-dataset_rows = []
-
-# def write_dataset(dataset_path):
-#   with open(dataset_path, 'w', encoding='utf-8', newline='') as f_write:
-#     wr = csv.writer(f_write)
-#     wr.writerow(dataset_header)
-#     wr.writerows(dataset_rows)
-
-##! Rename pkg_comp_arch_opti_bin -> pkg_bin_comp_arch_opti
-def rename():
-  SRC_PATH = "/Users/topcue/Desktop/renamed/"
-  DST_PATH = "/Users/topcue/Desktop/renamed/"
-
-  file_names = get_file_names(SRC_PATH)
-  for file_name in file_names:
-    spl = file_name.split("_")
-    pkg, comp, arch, opti = spl[0], spl[1], spl[2] + "_" + spl[3], spl[4]
-    bin_name = '_'.join(spl[5:])
-
-    ##! Rename Ofast -> Of
-    if opti == "Ofast": opti = "Of"
-
-    new_name = '_'.join([pkg, bin_name, comp, arch, opti]) + ".elf"
-    print("new_name:", new_name)
-
-    src_path = SRC_PATH + file_name
-    dst_path = DST_PATH + new_name
-    cmd = "cp {} {}".format(src_path, dst_path)
-    # print(cmd)
-    # os.system(cmd)
-
-# def split_name(file_name):
-#   spl = file_name.split("_")
-
-#   opti = spl[-1].replace(".elf", '')
-#   arch = spl[-3] + '_' + spl[-2]
-#   comp = spl[-4]
-#   bin_name = '_'.join(spl[1:-4]) ##! bin_name can contain '_'
-#   pkg = spl[0]
-
-#   return pkg, bin_name, comp, arch, opti
-
-##! ============================================================================
-
-COMPILER_LIST = ["gcc-4.9.4", "gcc-5.5.0", "gcc-6.4.0", "gcc-7.3.0", "gcc-8.2.0", "gcc-9.4.0", "gcc-10.3.0", "gcc-11.2.0", "clang-4.0", "clang-5.0", "clang-6.0", "clang-7.0", "clang-8.0", "clang-9.0", "clang-10.0", "clang-11.0", "clang-12.0", "clang-13.0"]
-ARCH_LIST = ["x86_32", "x86_64", "arm_32", "arm_64", "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
+COMPILER_LIST = \
+  ["gcc-4.9.4", "gcc-5.5.0", "gcc-6.5.0", "gcc-7.3.0", "gcc-8.2.0", \
+   "gcc-9.4.0", "gcc-10.3.0", "gcc-11.2.0", "clang-4.0", "clang-5.0", \
+   "clang-6.0", "clang-7.0", "clang-8.0", "clang-9.0", "clang-10.0", \
+   "clang-11.0", "clang-12.0", "clang-13.0"]
+ARCH_LIST = ["x86_32", "x86_64", "arm_32", "arm_64", "mips_32", "mips_64"]
 OPTI_LIST = ["O0", "O1", "O2", "O3", "Os", "Of"]
 PKG_BIN_LIST = []
 
-def get_pkg_bin_list():
-  BASE_PATH = "storage/assembly/truncate/x86_32"
+dataset_header = ["file_name", "O0", "O1", "O2", "O3", "Os", "Of"]
+
+def get_pkg_bin_list(BASE_PATH):
   file_names = get_file_names(BASE_PATH)
 
   tmp_dict = dict()
@@ -77,34 +30,29 @@ def get_pkg_bin_list():
   global PKG_BIN_LIST
   PKG_BIN_LIST = list(tmp_dict.keys())
 
-  # for pkg_bin in PKG_BIN_LIST:
-  #   print(pkg_bin)
-  # print(len(PKG_BIN_LIST))
-
 def get_hash(file_path):
   BASE_CMD = "{} -O binary --only-section=.text {} {}"
   if any(x in file_path for x in ["x86_32", "x86_64"]):
-    objcopy = "x86_64-elf-objcopy"
+    objcopy = "x86_64-linux-gnu-objcopy"
   elif any(x in file_path for x in ["arm_32", "arm_64"]):
-    objcopy = "aarch64-elf-objcopy"
+    objcopy = "aarch64-linux-gnu-objcopy"
   elif any(x in file_path for x in ["mips_32", "mips_64", "mipseb_32", "mipseb_64"]):
-    objcopy = "mips-elf-objcopy"
+    objcopy = "mips-linux-gnu-objcopy"
 
-  cmd = BASE_CMD.format(objcopy, file_path, "tmp.txt")
+  cmd = BASE_CMD.format(objcopy, file_path, "/tmp/result.txt")
   os.system(cmd)
-  output = os.popen("md5 tmp.txt").read()[-33:-1]
+  output = os.popen("md5sum /tmp/result.txt").read()[-33:-1]
   
   return output
 
-OPTIMZ_DICT = {0:"o0", 1:"o1", 2:"o2", 3:"o3", 4:"os", 5:"of"}
 
 def multiple_index(target, lst):
-  return [OPTIMZ_DICT[i] for i, ele in enumerate(lst) if ele == target]
+  # OPTIMZ_DICT = {0:"o0", 1:"o1", 2:"o2", 3:"o3", 4:"os", 5:"of"}
+  # return [OPTIMZ_DICT[i] for i, ele in enumerate(lst) if ele == target]
+  return [i for i, ele in enumerate(lst) if ele == target]
 
-cnt1 = 0
-cnt2 = 0
 
-def find_dup(row):
+def find_dup(row, return_list):
   tags = row[1:]
   o0, o1, o2, o3, os, of = row[1], row[2], row[3], row[4], row[5], row[6]
   r0, r1, r2, r3, rs, rf = [], [], [], [], [], []
@@ -115,93 +63,114 @@ def find_dup(row):
   r3 = multiple_index(o3, tags)
   rs = multiple_index(os, tags)
   rf = multiple_index(of, tags)
-  
+
+  new_row = [' ' for _ in range(6)]
+
   for idx, r in enumerate([r0, r1, r2, r3, rs, rf]):
-    r.remove(OPTIMZ_DICT[idx])
-  print(r0, r1, r2, r3, rs, rf)
-
-  if len(r3) > 0 and len(rf) > 0:
-    global cnt1
-    cnt1 += 1 ## o3 of
-  if len(r2) > 0 and len(r3) > 0:
-    global cnt2
-    cnt2 += 1 ## o2 o3
-
-
-
-
+    if len(r) == 1:
+      continue
+    for dup_idx in r:
+      new_row[dup_idx] = "d"
   
-  # tp = (o1, o2, o3, os, of)
-  # if o0 in res:
-  #   print(tp.index(o0))
+  result = [row[0]]
+  result.extend(new_row)
+  print(result)
   
+  return_list.append(result)
+
+def build_dup_list(BASE_PATH):
+  p = get_pool()
+  return_list = mp.Manager().list()
   
-  pass
-
-def main():
-  BASE_PATH = "/Users/topcue/Desktop/renamed_incom/"
-  # file_names = get_file_names(BASE_PATH)
-  print(PKG_BIN_LIST)
-
-  # for pkg_bin in PKG_BIN_LIST:
-  for pkg_bin in ["gawk-5.2.1_pwcat"]:
+  for pkg_bin in PKG_BIN_LIST:
+  # for pkg_bin in ["gawk-5.2.1_pwcat"]:
     for item in product(COMPILER_LIST, ARCH_LIST, repeat=1):
-      pkh_bin_comp_arch = pkg_bin + '_' + item[0] + '_' + item[1]
-      row = [pkh_bin_comp_arch]
+      pkg_bin_comp_arch = pkg_bin + '_' + item[0] + '_' + item[1]
+      row = [pkg_bin_comp_arch]
+      # print("[*]", pkg_bin_comp_arch)
       for opti in OPTI_LIST:
         comp_arch = '_'.join(list(item))
 
         file_name = pkg_bin + '_' + comp_arch +  '_' + opti + ".elf"
-        file_path = BASE_PATH + file_name
-        # print(file_name)
+        file_path = os.path.join(BASE_PATH, file_name)
 
         is_file_exists = exists(file_path)
         if is_file_exists:
           hash_tag = get_hash(file_path)
           row.append(hash_tag[:8])
         else:
-          # row.append('x')
+          eprint("not exist binary: %s" % file_path)
           row.append(str(random.random()))
       
-      print(row)
-      print(file_name)
-      new_row = find_dup(row)
-      
-      dataset_rows.append(row)
+      p.apply_async(func=find_dup, args=(row, return_list, ))
+  end_pool(p)
+
+  write_dataset("dup.csv", return_list, dataset_header)
+
+
+def remove_dup():
+  remove_list = []
+  dataset = load_dataset("dup.csv")
   
-  # for i in dataset_rows:
-  #   print(i)
-      
-  # write_dataset("tmp.csv")
+  for idx in dataset.index:
+    flag_first = False
+    file_name = dataset['file_name'][idx]
+    for opti in OPTI_LIST:
+      item = dataset[opti][idx]
+      if item == ' ':
+        continue
 
-  # for idx in range(0, len(file_names), 4):
-  #   f1, f2, f3, f4 = file_names[idx], file_names[idx+1], file_names[idx+2], file_names[idx+3]
-        
-  #   common_name = f1[:-7]
-  #   print(common_name)
+      if not flag_first:
+        flag_first = True
+      else:
+        remove_file_name = file_name + '_' + opti
+        remove_list.append(remove_file_name)
+  
+  for file_name in remove_list:
+    print(file_name)
+  write_file("remove_list.txt", remove_list)
 
-  #   row = [common_name]
-  #   for f in (f1, f2, f3, f4):
-      
-  #     local_cmd = cmd.format(BASE_PATH + f)
 
-  #     ##! objdump
-  #     stream = os.popen(local_cmd)
-  #     output = stream.read()
-  #     hash_object = hashlib.md5(output.encode('utf-8'))
-  #     tag = hash_object.hexdigest()
-      
-  #     row.append(tag)
+from collections import Counter
 
-  #   dataset_rows.append(row)
-    
-  # write_dataset("ccdu_file.csv")
+def stat():
+  ##! Fix 
+  dataset = load_dataset("tmp.csv")
+  dup_case = []
+  file_names = []
+  
+  for idx in dataset.index:
+    file_name = dataset['file_name'][idx]
+    dup_list = []
+    for opti in OPTI_LIST:
+      item = dataset[opti][idx]
+      if item == 'd':
+        dup_list.append(opti)
+    if dup_list:
+      print("[*]", file_name, dup_list)
+      file_names.append(file_name)
+      dup_case.append('-'.join(dup_list))
+  
+  for file_name in file_names:
+    print(file_name)
+  
+  counter = Counter(dup_case)
+  for item in counter.items():
+    print(item)
+
+
+
+def main():
+  # BASE_PATH = "storage/binary/renamed"
+  # get_pkg_bin_list(BASE_PATH)
+  # build_dup_list(BASE_PATH)
+  
+  # remove_dup()
+  stat()
+
 
 if __name__ == "__main__":
-  get_pkg_bin_list()
+  main()
 
-  # main()
-  
-  
 
 # EOF

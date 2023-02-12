@@ -18,9 +18,7 @@ from sklearn.metrics import RocCurveDisplay
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, OrdinalEncoder
 
-def load_dataset(dataset_path):
-  ds = pd.read_csv(dataset_path)
-  return ds
+from util import *
 
 def preprocess_ds(ds):
   ##! 1) optmz o0 vs o1
