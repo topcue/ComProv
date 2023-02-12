@@ -6,9 +6,10 @@ import copy
 import time
 import re 
 
+from threading import Thread
+
 dataset_header = ["file_name", "optmz", "x1", "x2", "x3", "x4", "x5", "x6",  "xi", \
                   "arch", "num_func", "compiler", "total_insn"]
-dataset_rows = []
 
 ##! ============================================================================
 
@@ -277,7 +278,7 @@ class Binary:
 ## =============================================================================
 
 
-def foo(file_name, dump_path, arch):
+def foo(file_name, dump_path, arch, dataset_rows):
   pkl_path = os.path.join("pkl", arch)
   pkl_file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
   
@@ -288,9 +289,10 @@ def foo(file_name, dump_path, arch):
     file_path = os.path.join(dump_path, file_name)
     binary = Binary(file_name, file_path, arch)
     binary = filter(binary, False)
+    ##! Comment out if not needed
+    # write_pickle(pkl_file_path, binary)
   
-  print("[*]", binary.name)
-  # write_pickle(pkl_file_path, binary)
+  print("[+]", binary.name)
   
   row = binary.get_row()
   dataset_rows.append(row)
@@ -302,23 +304,21 @@ def build_dataset(arch: str):
   dump_path = "storage/assembly/truncate/%s" % (arch)
   file_names = get_file_names(dump_path)
 
+  dataset_rows = mp.Manager().list()
   p = get_pool()
-  ##! DEBUG
-  # for file_name in file_names[:14000]:
+  ##! fix me
   for file_name in file_names:
-    foo(file_name, dump_path, arch)
+    p.apply_async(func=foo, args=(file_name, dump_path, arch, dataset_rows, ))
   end_pool(p)
 
-  dataset_path = "dataset/dataset_{}.csv".format(arch) ##!
-  write_dataset(dataset_path)
+  dataset_path = "dataset/dataset_{}.csv".format(arch)
+  write_dataset(dataset_path, dataset_rows, dataset_header)
   
 
 if __name__ == "__main__":
   if len(sys.argv) < 2: eprint("Arg Err!")  
   arg = sys.argv[1]
-
   build_dataset(arg)
-
 
 
 # EOF

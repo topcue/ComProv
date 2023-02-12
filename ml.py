@@ -135,7 +135,7 @@ def select_features(ds):
   # ds = ds[ds["compiler"].str.contains("clang")]
   # ds = ds.drop(ds[ds["file_name"].str.contains("gcc-8")].index)
 
-  selected_features = ["x1", "x2"]
+  selected_features = ["x1", "x2", "x3", "x4"]
 
   print(selected_features)
   x = ds[selected_features]

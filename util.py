@@ -44,7 +44,7 @@ def write_pickle(path: str, data):
 def read_pickle(path: str):
   with open(path, 'rb') as f:
     data = pickle.load(f)
-  print("[*]", os.path.basename(path))
+  # print("[*]", os.path.basename(path))
   return data
 
 
