@@ -69,15 +69,28 @@ class Binary:
     x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
 
     if arch == "x86_32":
-      cnt1, cnt2 = 0, 0
+      cnt1, cnt2, cnt3, cnt4, cnt5 = 0, 0, 0, 0, 0
       for insn in lst:
-        if insn["Insn"] == "movl ebp, esp":
-          cnt1 += 1
+        if insn["Insn"] == "mov ebp, esp":
+          cnt1 -= 1
         if insn["Insn"] == "nop":
           cnt2 += 2
+        
+        if insn["Insn"].startswith("cmp") and insn["Insn"].endswith(", 0"):
+          cnt3 -= 1
+        elif insn["Insn"].startswith("test"):
+          cnt3 += 1
+
+        if insn["Insn"].startswith("mov") and insn["Insn"].endswith(", 0"):
+          cnt4 -= 1
+        elif insn["Insn"].startswith("xor"):
+          cnt4 += 1
+        
         ##! mov eax, 0 -> xor eax, eax
-      x1 = round(cnt1 / num_func, 5)
+      x1 = round(cnt1 / num_func, 4)
       x2 = round(cnt2 / total_insn, 5)
+      x3 = round(cnt3 / total_insn, 5)
+      x4 = round(cnt3 + cnt4 / total_insn, 5)
     elif arch == "x86_64": ##! renew
       cnt = lst.count("mov RBP, RSP")
       x1 = round(cnt / num_func, 4)
@@ -313,7 +326,8 @@ def build_dataset(arch: str):
 
   dataset_path = "dataset/dataset_{}.csv".format(arch)
   write_dataset(dataset_path, dataset_rows, dataset_header)
-  
+  os.system("cp {} {}" % (dataset_path, "/home/topcue/Dropbox"))
+
 
 if __name__ == "__main__":
   if len(sys.argv) < 2: eprint("Arg Err!")  

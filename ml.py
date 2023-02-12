@@ -20,6 +20,27 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, OrdinalEncoder
 
 from util import *
 
+
+# def manual_test(arch):
+#   ds = load_dataset("dataset/dataset_{}.csv".format(arch))
+#   ds = preprocess_ds(ds)
+#   print("step0:", len(ds))
+
+#   ##! filtering startup functions
+#   for i, row in ds.iterrows():
+#     if row.x1 <= 0.8 and row.optmz != 0:
+#       ds = ds.drop(index=[i])
+#     elif row.x1 > 0.8 and row.optmz == 0:
+#       ds = ds.drop(index=[i])
+#   print("step1:", len(ds))
+  
+#   ##! filtering inlined function
+#   for i, row in ds.iterrows():
+#     if row.x2 > 0.2 and row.optmz != 0:
+#       ds = ds.drop(index=[i])
+#   print("step2:", len(ds))
+
+
 def preprocess_ds(ds):
   ##! 1) optmz o0 vs o1
   ##! phase2
@@ -67,6 +88,7 @@ def preprocess_ds(ds):
 
   return ds
 
+
 def split_dataset(x, y, train_size=0.5):
   train_x, test_x, train_y, test_y = \
     train_test_split(x, y, train_size=train_size, stratify=y)
@@ -74,11 +96,13 @@ def split_dataset(x, y, train_size=0.5):
 
   return train_x, test_x, train_y, test_y
 
+
 def reg(train_x, test_x):
   scaler = StandardScaler()
   train_x = scaler.fit_transform(train_x)
   test_x = scaler.transform(test_x)
   return train_x, test_x
+
 
 def get_colors(ds):
   colors = []
@@ -109,7 +133,7 @@ def get_colors(ds):
 
   return colors, patches
 
-#! =============================================================================
+
 def display_plot(arch):
   ds = load_dataset("dataset/dataset_{}.csv".format(arch))
 
@@ -122,28 +146,32 @@ def display_plot(arch):
   plt.scatter(x=ds[["x1"]], y=ds[["optmz"]], s=1, c=colors, label=colors)
   plt.xlabel("feature")
   plt.ylabel("optmz level")
-  plt.yticks([0, 1, 2, 3, 4, 5])
+  # plt.yticks([0, 1, 2, 3, 4, 5])
+  plt.yticks(np.arange(0, 6), ("o0", "o1", "o2", "o3", "os", "of"))
+
   plt.title(arch)
-  # plt.legend(handles=patches)
-  plt.show()
+  plt.legend(handles=patches)
+  
+  # plt.show()
+  plt.savefig("/home/topcue/Dropbox/graph.png", dpi=500)
+
 
 def select_features(ds):
   ##! here
   # selected_features = ["x1", "x4"] ##! good arm32
 
-  # ds = ds[ds["compiler"].str.contains("gcc")]
-  # ds = ds[ds["compiler"].str.contains("clang")]
-  # ds = ds.drop(ds[ds["file_name"].str.contains("gcc-8")].index)
+  ds = ds[ds["compiler"].str.contains("gcc")]
+  # ds = ds.drop(ds[ds["file_name"].str.contains("gawk")].index)
 
-  selected_features = ["x1", "x2", "x3", "x4"]
+  selected_features = ["x1", "x2", "x4"]
 
-  print(selected_features)
+  print("[*] selected features:", selected_features)
   x = ds[selected_features]
   y = ds[["optmz"]]
 
   return np.array(x), np.array(y).ravel()
 
-#! =============================================================================
+
 def kfold(arch):
   ds = load_dataset("dataset/dataset_{}.csv".format(arch))
   ds = preprocess_ds(ds)
@@ -151,7 +179,6 @@ def kfold(arch):
 
   accuracy_history = []
   f1_score_history = []
-  #! kfold
   kf = StratifiedKFold(n_splits=9, shuffle=True)
   for train_index, test_index in kf.split(x, y):
     ##! flip
@@ -171,42 +198,19 @@ def kfold(arch):
     accuracy_history.append(accuracy_score(y_pred, test_y))
     f1_score_history.append(f1_score(y_pred, test_y))
 
-  print("[*] accyracy:", accuracy_history)
+  for accuracy in accuracy_history:
+    print("acc:", round(accuracy, 5))
   print("[*] accuracy mean:", round(np.mean(accuracy_history) * 100, 3))
   # print("[*] f1 score mean:", round(np.mean(f1_score_history) * 100, 2))
 
-def manual_test(arch):
-  ds = load_dataset("dataset/dataset_{}.csv".format(arch))
-  ds = preprocess_ds(ds)
-  print("step0:", len(ds))
-
-  ##! filtering startup functions
-  for i, row in ds.iterrows():
-    if row.x1 <= 0.8 and row.optmz != 0:
-      ds = ds.drop(index=[i])
-    elif row.x1 > 0.8 and row.optmz == 0:
-      ds = ds.drop(index=[i])
-  print("step1:", len(ds))
-  
-  ##! filtering inlined function
-  for i, row in ds.iterrows():
-    if row.x2 > 0.2 and row.optmz != 0:
-      ds = ds.drop(index=[i])
-  print("step2:", len(ds))
-
-  # for i, row in ds.iterrows():
-  #   print(row.file_name)
-  pass
 
 if __name__ == "__main__":
-  if len(sys.argv) < 2:
-    print("[-] Arg Err!")
-    exit(0)
+  if len(sys.argv) < 2: eprint("Arg Err")
   arch = sys.argv[1]
-
-  # display_plot(arch)
+  
   # manual_test(arch)
-
+  
+  display_plot(arch)
   kfold(arch)
 
 # EOF

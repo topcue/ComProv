@@ -13,7 +13,7 @@ def eprint(message):
 
 
 def get_pool(num_cores=NUM_CORES):
-  return mp.Pool(NUM_CORES)
+  return mp.Pool(num_cores)
 
 
 def end_pool(p):

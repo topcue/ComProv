@@ -56,9 +56,8 @@ def dump(src_dir_path, dst_dir_path):
   file_names = os.listdir(src_dir_path)
   file_names.sort()
   
-  objdump_path = "tools/llvm-objdump"
   objdump_options = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
-  cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
+  cmd_base = "tools/llvm-objdump %s %s > %s" % (objdump_options, "%s", "%s")
 
   for file_name in file_names:
     print("[*] objdump:", file_name)
@@ -130,7 +129,7 @@ def main():
 
   ##! dup here: renamed -> renamed(unique)
 
-  # dump("storage/binary/unique", "storage/assembly/dump")
+  # dump("storage/binary/unique", "storage/assembly/dump") ##! <- here
   # truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
