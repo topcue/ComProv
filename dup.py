@@ -39,9 +39,10 @@ def get_hash(file_path):
   elif any(x in file_path for x in ["mips_32", "mips_64", "mipseb_32", "mipseb_64"]):
     objcopy = "mips-linux-gnu-objcopy"
 
-  cmd = BASE_CMD.format(objcopy, file_path, "/tmp/result.txt")
+  rand_num = random.randint(1, 500)
+  cmd = BASE_CMD.format(objcopy, file_path, "/tmp/result-%s.txt" % rand_num)
   os.system(cmd)
-  output = os.popen("md5sum /tmp/result.txt").read()[-33:-1]
+  output = os.popen("md5sum /tmp/result-%s.txt" % rand_num).read()[-33:-1]
   
   return output
 
@@ -84,6 +85,7 @@ def build_dup_list(BASE_PATH):
   
   for pkg_bin in PKG_BIN_LIST:
   # for pkg_bin in ["gawk-5.2.1_pwcat"]:
+  # for pkg_bin in ["binutils-2.40_objcopy"]:
     for item in product(COMPILER_LIST, ARCH_LIST, repeat=1):
       pkg_bin_comp_arch = pkg_bin + '_' + item[0] + '_' + item[1]
       row = [pkg_bin_comp_arch]
@@ -161,11 +163,11 @@ def stat():
 
 
 def main():
-  # BASE_PATH = "storage/binary/renamed"
+  BASE_PATH = "storage/binary/renamed"
   # get_pkg_bin_list(BASE_PATH)
   # build_dup_list(BASE_PATH)
   
-  # remove_dup()
+  remove_dup()
   stat()
 
 

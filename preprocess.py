@@ -74,6 +74,7 @@ def dump(src_dir_path, dst_dir_path):
     p.apply_async(func=exec_cmd, args=(cmd, ))
   end_pool(p)
 
+
 def truncate_single(file_name, src_dir_path, dst_dir_path):
   file_path = os.path.join(src_dir_path, file_name)
   file_data = read_file(file_path)
@@ -111,6 +112,7 @@ def truncate_single(file_name, src_dir_path, dst_dir_path):
   print("[*]", file_name)
   write_file(dst_file_path, new_file_data)
 
+
 def truncate(src_dir_path, dst_dir_path):
   p = get_pool()
   
@@ -129,14 +131,14 @@ def truncate(src_dir_path, dst_dir_path):
 def main():
   # flatten("storage/original", "storage/binary/flatten")
   # rename("storage/binary/flatten", "storage/binary/renamed")
-  ##! dup here: renamed -> unique
-  dump("storage/binary/unique", "storage/assembly/dump")
+  ##! dup here: renamed -> renamed(unique)
+  dump("storage/binary/renamed", "storage/assembly/dump")
   truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
+
 if __name__ == "__main__":
   main()
-  
-  
+
 
 # EOF
