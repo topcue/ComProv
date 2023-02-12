@@ -5,13 +5,15 @@ import random
 
 from itertools import product
 from os.path import exists
+from collections import Counter
 
 COMPILER_LIST = \
   ["gcc-4.9.4", "gcc-5.5.0", "gcc-6.5.0", "gcc-7.3.0", "gcc-8.2.0", \
    "gcc-9.4.0", "gcc-10.3.0", "gcc-11.2.0", "clang-4.0", "clang-5.0", \
    "clang-6.0", "clang-7.0", "clang-8.0", "clang-9.0", "clang-10.0", \
    "clang-11.0", "clang-12.0", "clang-13.0"]
-ARCH_LIST = ["x86_32", "x86_64", "arm_32", "arm_64", "mips_32", "mips_64"]
+ARCH_LIST = ["x86_32", "x86_64", "arm_32", "arm_64", \
+             "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
 OPTI_LIST = ["O0", "O1", "O2", "O3", "Os", "Of"]
 PKG_BIN_LIST = []
 
@@ -30,6 +32,7 @@ def get_pkg_bin_list(BASE_PATH):
   global PKG_BIN_LIST
   PKG_BIN_LIST = list(tmp_dict.keys())
 
+
 def get_hash(file_path):
   BASE_CMD = "{} -O binary --only-section=.text {} {}"
   if any(x in file_path for x in ["x86_32", "x86_64"]):
@@ -39,10 +42,11 @@ def get_hash(file_path):
   elif any(x in file_path for x in ["mips_32", "mips_64", "mipseb_32", "mipseb_64"]):
     objcopy = "mips-linux-gnu-objcopy"
 
-  rand_num = random.randint(1, 500)
-  cmd = BASE_CMD.format(objcopy, file_path, "/tmp/result-%s.txt" % rand_num)
+  ##! Fix me: remove /tmp/tmp dir
+  file_name = os.path.basename(file_path)
+  cmd = BASE_CMD.format(objcopy, file_path, "/tmp/tmp/%s.txt" % file_name)
   os.system(cmd)
-  output = os.popen("md5sum /tmp/result-%s.txt" % rand_num).read()[-33:-1]
+  output = os.popen("md5sum /tmp/tmp/%s.txt" % file_name).read()#[-33:-1]
   
   return output
 
@@ -71,7 +75,7 @@ def find_dup(row, return_list):
     if len(r) == 1:
       continue
     for dup_idx in r:
-      new_row[dup_idx] = "d"
+      new_row[dup_idx] = 'd'
   
   result = [row[0]]
   result.extend(new_row)
@@ -85,32 +89,29 @@ def build_dup_list(BASE_PATH):
   
   for pkg_bin in PKG_BIN_LIST:
   # for pkg_bin in ["gawk-5.2.1_pwcat"]:
-  # for pkg_bin in ["binutils-2.40_objcopy"]:
     for item in product(COMPILER_LIST, ARCH_LIST, repeat=1):
       pkg_bin_comp_arch = pkg_bin + '_' + item[0] + '_' + item[1]
       row = [pkg_bin_comp_arch]
-      # print("[*]", pkg_bin_comp_arch)
       for opti in OPTI_LIST:
         comp_arch = '_'.join(list(item))
-
         file_name = pkg_bin + '_' + comp_arch +  '_' + opti + ".elf"
         file_path = os.path.join(BASE_PATH, file_name)
-
         is_file_exists = exists(file_path)
         if is_file_exists:
           hash_tag = get_hash(file_path)
           row.append(hash_tag[:8])
         else:
-          eprint("not exist binary: %s" % file_path)
+          ##! If dataset is incomplete, use random number.
+          ##! But the current code assumes a complete dataset.
+          eprint("not exist binary error: %s" % file_path)
           row.append(str(random.random()))
-      
       p.apply_async(func=find_dup, args=(row, return_list, ))
   end_pool(p)
 
   write_dataset("dup.csv", return_list, dataset_header)
 
 
-def remove_dup():
+def gen_remove_list():
   remove_list = []
   dataset = load_dataset("dup.csv")
   
@@ -119,25 +120,18 @@ def remove_dup():
     file_name = dataset['file_name'][idx]
     for opti in OPTI_LIST:
       item = dataset[opti][idx]
-      if item == ' ':
-        continue
-
+      if item == ' ': continue
       if not flag_first:
         flag_first = True
       else:
         remove_file_name = file_name + '_' + opti
-        remove_list.append(remove_file_name)
+        remove_list.append(remove_file_name + '\n')
   
-  for file_name in remove_list:
-    print(file_name)
   write_file("remove_list.txt", remove_list)
 
 
-from collections import Counter
-
 def stat():
-  ##! Fix 
-  dataset = load_dataset("tmp.csv")
+  dataset = load_dataset("dup.csv")
   dup_case = []
   file_names = []
   
@@ -153,22 +147,19 @@ def stat():
       file_names.append(file_name)
       dup_case.append('-'.join(dup_list))
   
-  for file_name in file_names:
-    print(file_name)
-  
   counter = Counter(dup_case)
   for item in counter.items():
-    print(item)
-
+    print("%s: %s" % (item[0], item[1]))
 
 
 def main():
+  ##! DEBUG: fix me
   BASE_PATH = "storage/binary/renamed"
-  # get_pkg_bin_list(BASE_PATH)
-  # build_dup_list(BASE_PATH)
+  get_pkg_bin_list(BASE_PATH)
+  build_dup_list(BASE_PATH)
   
-  remove_dup()
-  stat()
+  # gen_remove_list()
+  # stat()
 
 
 if __name__ == "__main__":

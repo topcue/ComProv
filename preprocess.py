@@ -3,7 +3,7 @@ from util import *
 import os
 
 ##! Suppose as mips eq mipseb
-ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64"]
+ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
 
 ##! Directories composed of package names are located in the src_path.
 def flatten(src_dir_path, dst_dir_path):
@@ -31,10 +31,6 @@ def rename(src_dir_path, dst_dir_path):
     spl = file_name.split("_")
     pkg, comp, arch, opti = spl[0], spl[1], spl[2] + "_" + spl[3], spl[4]
     bin_name = '_'.join(spl[5:])
-    
-    ##! filtering mipseb_32/64 here
-    if arch in ("mipseb_32", "mipseb_64"): continue
-
     bin_name = bin_name.replace('_', '-')
 
     ##! Rename Ofast to Of
@@ -61,9 +57,9 @@ def dump(src_dir_path, dst_dir_path):
   file_names.sort()
   
   objdump_path = "tools/llvm-objdump"
-  objdump_options = "--disassemble --section=.text --no-show-raw-insn --no-print-imm-hex"
+  objdump_options = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
   cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
-
+  
   for file_name in file_names:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
@@ -130,10 +126,10 @@ def truncate(src_dir_path, dst_dir_path):
 
 def main():
   # flatten("storage/original", "storage/binary/flatten")
-  # rename("storage/binary/flatten", "storage/binary/renamed")
+  rename("storage/binary/flatten", "storage/binary/renamed")
   ##! dup here: renamed -> renamed(unique)
-  dump("storage/binary/renamed", "storage/assembly/dump")
-  truncate("storage/assembly/dump", "storage/assembly/truncate")
+  # dump("storage/binary/renamed", "storage/assembly/dump")
+  # truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
 
