@@ -28,7 +28,8 @@ class Binary:
     self.lst = lst
     self.funcs = funcs
     self.get_general_info()
-  
+
+
   def get_general_info(self):
     name = self.name
     self.arch = get_arch(name)
@@ -36,7 +37,8 @@ class Binary:
     self.optmz = get_optmz(name)
     self.total_insn = len(self.lst)
     self.num_func = len(self.funcs.keys())
-  
+
+
   def get_reg(self, insn):
     if self.arch == "x86_64": reg_set = ()
     elif self.arch == "arm_64": reg_set = ("sp", "x", "w")
@@ -56,6 +58,7 @@ class Binary:
 
     return reg
 
+
   def get_xs(self):
     lst = self.lst
     funcs = self.funcs
@@ -67,10 +70,11 @@ class Binary:
     if arch == "x86_32":
       cnt1, cnt2 = 0, 0
       for insn in lst:
-        if insn["Insn"] == "movl %esp, %ebp":
+        if insn["Insn"] == "movl ebp, esp":
           cnt1 += 1
         if insn["Insn"] == "nop":
           cnt2 += 2
+        ##! mov eax, 0 -> xor eax, eax
       x1 = round(cnt1 / num_func, 5)
       x2 = round(cnt2 / total_insn, 5)
     elif arch == "x86_64": ##! renew
@@ -176,7 +180,8 @@ class Binary:
     else: eprint("arch error!")
 
     self.x1, self.x2, self.x3, self.x4, self.x5, self.x6 = x1, x2, x3, x4, x5, x6
-  
+
+
   def get_xi(self):
     funcs = self.funcs
     arch = self.arch
@@ -252,6 +257,7 @@ class Binary:
 
     self.xi = xi
 
+
   def get_row(self):
     ##! init
     x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
@@ -270,6 +276,7 @@ class Binary:
 
 ## =============================================================================
 
+
 def foo(file_name, dump_path, arch):
   pkl_path = os.path.join("pkl", arch)
   pkl_file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
@@ -287,6 +294,7 @@ def foo(file_name, dump_path, arch):
   
   row = binary.get_row()
   dataset_rows.append(row)
+
 
 def build_dataset(arch: str):
   os.system("mkdir -p %s" % (os.path.join("pkl", arch)))

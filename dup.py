@@ -41,8 +41,7 @@ def get_hash(file_path):
     objcopy = "aarch64-linux-gnu-objcopy"
   elif any(x in file_path for x in ["mips_32", "mips_64", "mipseb_32", "mipseb_64"]):
     objcopy = "mips-linux-gnu-objcopy"
-
-  ##! Fix me: remove /tmp/tmp dir
+  
   file_name = os.path.basename(file_path)
   cmd = BASE_CMD.format(objcopy, file_path, "/tmp/tmp/%s.txt" % file_name)
   os.system(cmd)
@@ -153,13 +152,12 @@ def stat():
 
 
 def main():
-  ##! DEBUG: fix me
   BASE_PATH = "storage/binary/renamed"
   get_pkg_bin_list(BASE_PATH)
   build_dup_list(BASE_PATH)
   
-  # gen_remove_list()
-  # stat()
+  gen_remove_list()
+  stat()
 
 
 if __name__ == "__main__":

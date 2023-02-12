@@ -59,7 +59,7 @@ def dump(src_dir_path, dst_dir_path):
   objdump_path = "tools/llvm-objdump"
   objdump_options = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
   cmd_base = "%s %s %s > %s" % (objdump_path, objdump_options, "%s", "%s")
-  
+
   for file_name in file_names:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
@@ -126,9 +126,11 @@ def truncate(src_dir_path, dst_dir_path):
 
 def main():
   # flatten("storage/original", "storage/binary/flatten")
-  rename("storage/binary/flatten", "storage/binary/renamed")
+  # rename("storage/binary/flatten", "storage/binary/renamed")
+
   ##! dup here: renamed -> renamed(unique)
-  # dump("storage/binary/renamed", "storage/assembly/dump")
+
+  # dump("storage/binary/unique", "storage/assembly/dump")
   # truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
