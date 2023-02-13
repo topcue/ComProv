@@ -138,15 +138,12 @@ def display_plot(arch):
   ds = load_dataset("dataset/dataset_{}.csv".format(arch))
 
   ##! here
-  # ds = ds[ds["compiler"].str.contains("clang")]
   # ds = ds[ds["compiler"].str.contains("gcc")]
-  # ds = ds.drop(ds[ds["file_name"].str.contains("gcc-8")].index)
 
   colors, patches = get_colors(ds)
   plt.scatter(x=ds[["x1"]], y=ds[["optmz"]], s=1, c=colors, label=colors)
   plt.xlabel("feature")
-  plt.ylabel("optmz level")
-  # plt.yticks([0, 1, 2, 3, 4, 5])
+  plt.ylabel("opti level")
   plt.yticks(np.arange(0, 6), ("o0", "o1", "o2", "o3", "os", "of"))
 
   plt.title(arch)
@@ -160,10 +157,12 @@ def select_features(ds):
   ##! here
   # selected_features = ["x1", "x4"] ##! good arm32
 
-  ds = ds[ds["compiler"].str.contains("gcc")]
+  # ds = ds[ds["compiler"].str.contains("gcc")]
   # ds = ds.drop(ds[ds["file_name"].str.contains("gawk")].index)
+  # ds = ds.drop(ds[ds["file_name"].str.contains("glpk")].index)
+  # ds = ds.drop(ds[ds["file_name"].str.contains("nettle")].index)
 
-  selected_features = ["x1", "x2", "x4"]
+  selected_features = ["x1", "x2", "x3", "x4", "num_func"]
 
   print("[*] selected features:", selected_features)
   x = ds[selected_features]

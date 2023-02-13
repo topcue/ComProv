@@ -26,6 +26,7 @@ class Binary:
 
     self.name = name
     self.path = path
+    self.arch = arch
     self.lst = lst
     self.funcs = funcs
     self.get_general_info()
@@ -33,7 +34,6 @@ class Binary:
 
   def get_general_info(self):
     name = self.name
-    self.arch = get_arch(name)
     self.compiler = get_compiler(name) ## TODO: Remove me
     self.optmz = get_optmz(name)
     self.total_insn = len(self.lst)
@@ -76,21 +76,23 @@ class Binary:
         if insn["Insn"] == "nop":
           cnt2 += 2
         
-        if insn["Insn"].startswith("cmp") and insn["Insn"].endswith(", 0"):
+        if insn["Insn"].startswith("cmp") and \
+           insn["Insn"].endswith(", 0"):
           cnt3 -= 1
         elif insn["Insn"].startswith("test"):
           cnt3 += 1
 
-        if insn["Insn"].startswith("mov") and insn["Insn"].endswith(", 0"):
-          cnt4 -= 1
+        if insn["Insn"].startswith("mov") and \
+          "ptr" not in insn["Insn"] and \
+           insn["Insn"].endswith(", 0"):
+          cnt3 -= 1
         elif insn["Insn"].startswith("xor"):
-          cnt4 += 1
-        
-        ##! mov eax, 0 -> xor eax, eax
+          cnt3 += 1
+      
       x1 = round(cnt1 / num_func, 4)
       x2 = round(cnt2 / total_insn, 5)
       x3 = round(cnt3 / total_insn, 5)
-      x4 = round(cnt3 + cnt4 / total_insn, 5)
+      
     elif arch == "x86_64": ##! renew
       cnt = lst.count("mov RBP, RSP")
       x1 = round(cnt / num_func, 4)
@@ -303,7 +305,8 @@ def foo(file_name, dump_path, arch, dataset_rows):
     binary = Binary(file_name, file_path, arch)
     binary = filter(binary, False)
     ##! Comment out if not needed
-    # write_pickle(pkl_file_path, binary)
+    write_pickle(pkl_file_path, binary)
+    return
   
   print("[+]", binary.name)
   
@@ -319,14 +322,14 @@ def build_dataset(arch: str):
 
   dataset_rows = mp.Manager().list()
   p = get_pool()
-  ##! fix me
+  
   for file_name in file_names:
     p.apply_async(func=foo, args=(file_name, dump_path, arch, dataset_rows, ))
   end_pool(p)
 
   dataset_path = "dataset/dataset_{}.csv".format(arch)
   write_dataset(dataset_path, dataset_rows, dataset_header)
-  os.system("cp {} {}" % (dataset_path, "/home/topcue/Dropbox"))
+  os.system("cp %s %s" % (dataset_path, "/home/topcue/Dropbox/"))
 
 
 if __name__ == "__main__":
