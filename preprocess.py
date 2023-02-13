@@ -45,26 +45,26 @@ def rename(src_dir_path, dst_dir_path):
 def dump(src_dir_path, dst_dir_path):
   p = get_pool()
   os.system("mkdir -p %s" % (dst_dir_path))
+  for arch in ARCH_LIST:
+    os.system("mkdir -p %s" % (os.path.join(dst_dir_path, arch)))
+  
+  objdump_path = "tools/llvm-objdump"
+  opts = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
+  cmd_base = "%s %s  %s > %s" % (objdump_path, opts)
 
   file_names = os.listdir(src_dir_path)
   file_names.sort()
-  
-  objdump_options = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
-  cmd_base = "tools/llvm-objdump %s %s > %s" % (objdump_options, "%s", "%s")
-
   for file_name in file_names:
     print("[*] objdump:", file_name)
     file_path = os.path.join(src_dir_path, file_name)
-    if file_name.endswith(".elf"): file_name = file_name[:-4]
-    target_path = os.path.join(dst_dir_path, file_name + ".txt")
+    target_path = os.path.join(dst_dir_path, arch, file_name.replace(".elf", ".txt"))
     cmd = cmd_base % (file_path, target_path)
-    
     p.apply_async(func=exec_cmd, args=(cmd, ))
   end_pool(p)
 
 
-def truncate_single(file_name, src_dir_path, dst_dir_path):
-  file_path = os.path.join(src_dir_path, file_name)
+def truncate_single(file_name, src_arch_path, dst_arch_path):
+  file_path = os.path.join(src_arch_path, file_name)
   file_data = read_file(file_path)
   new_file_data = []
   file_data = file_data[5:]
@@ -93,27 +93,28 @@ def truncate_single(file_name, src_dir_path, dst_dir_path):
       new_line = "%s :: %s :: %s" % ('i', addr, insn)
     new_file_data.append(new_line + '\n')
   
-  file_info = get_file_info(file_name)
-  arch = file_info["arch"]
-  dst_file_path = os.path.join(dst_dir_path, arch, file_name)
-  
   print("[*]", file_name)
-  write_file(dst_file_path, new_file_data)
+  target_path = os.path.join(dst_arch_path, file_name)
+  write_file(target_path, new_file_data)
 
 
 def truncate(src_dir_path, dst_dir_path):
-  p = get_pool()
-  
   os.system("mkdir -p %s" % (dst_dir_path))
   for arch in ARCH_LIST:
     os.system("mkdir -p %s" % (os.path.join(dst_dir_path, arch)))
 
-  file_names = os.listdir(src_dir_path)
-  file_names.sort()
-
-  for file_name in file_names:
-    p.apply_async(func=truncate_single, args=(file_name, src_dir_path, dst_dir_path, ))
-  end_pool(p)
+  for arch in ARCH_LIST:
+    print("[*] arch:", arch)
+    src_arch_path = os.path.join(src_dir_path, arch)
+    dst_arch_path = os.path.join(dst_dir_path, arch)
+    
+    file_names = os.listdir(src_arch_path)
+    file_names.sort()
+    p = get_pool()
+    for file_name in file_names:
+      args = (file_name, src_arch_path, dst_arch_path, )
+      p.apply_async(func=truncate_single, args=args)
+    end_pool(p)
 
 
 def main():

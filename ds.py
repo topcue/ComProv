@@ -23,12 +23,8 @@ class Binary:
   def __init__(self, name, path, arch):
     funcs = parse_functions(path)
     lst = funcs_to_list(funcs)
-
-    self.name = name
-    self.path = path
-    self.arch = arch
-    self.lst = lst
-    self.funcs = funcs
+    self.name, self.path, self.arch = name, path, arch
+    self.lst, self.funcs = lst, funcs
     self.get_general_info()
 
 
@@ -40,24 +36,24 @@ class Binary:
     self.num_func = len(self.funcs.keys())
 
 
-  def get_reg(self, insn):
-    if self.arch == "x86_64": reg_set = ()
-    elif self.arch == "arm_64": reg_set = ("sp", "x", "w")
-    elif self.arch == "arm_32": reg_set = ("sp", "fp", "lr", "pc", "ip", "r")
-    else: eprint("Error!!")
+  # def get_reg(self, insn):
+  #   if self.arch == "x86_64": reg_set = ()
+  #   elif self.arch == "arm_64": reg_set = ("sp", "x", "w")
+  #   elif self.arch == "arm_32": reg_set = ("sp", "fp", "lr", "pc", "ip", "r")
+  #   else: eprint("Error!!")
     
-    insn = re.split(' |, |{|}|\[|\]|!|-', insn)
-    while('' in insn): insn.remove('')
-    reg = []
-    for i in range(1, len(insn)):
-      ele = insn[i]
-      ##! arm:
-      if ele.startswith(reg_set): reg.append(ele)
-      else: continue
-      ##! x86_64:
-      # reg.append(ele)
+  #   insn = re.split(' |, |{|}|\[|\]|!|-', insn)
+  #   while('' in insn): insn.remove('')
+  #   reg = []
+  #   for i in range(1, len(insn)):
+  #     ele = insn[i]
+  #     ##! arm:
+  #     if ele.startswith(reg_set): reg.append(ele)
+  #     else: continue
+  #     ##! x86_64:
+  #     # reg.append(ele)
 
-    return reg
+  #   return reg
 
 
   def get_xs(self):
@@ -76,22 +72,22 @@ class Binary:
         if insn["Insn"] == "nop":
           cnt2 += 2
         
-        if insn["Insn"].startswith("cmp") and \
-           insn["Insn"].endswith(", 0"):
-          cnt3 -= 1
-        elif insn["Insn"].startswith("test"):
-          cnt3 += 1
+        # if insn["Insn"].startswith("cmp") and \
+        #    insn["Insn"].endswith(", 0"):
+        #   cnt3 -= 1
+        # elif insn["Insn"].startswith("test"):
+        #   cnt3 += 1
 
-        if insn["Insn"].startswith("mov") and \
-          "ptr" not in insn["Insn"] and \
-           insn["Insn"].endswith(", 0"):
-          cnt3 -= 1
-        elif insn["Insn"].startswith("xor"):
-          cnt3 += 1
+        # if insn["Insn"].startswith("mov") and \
+        #   "ptr" not in insn["Insn"] and \
+        #    insn["Insn"].endswith(", 0"):
+        #   cnt3 -= 1
+        # elif insn["Insn"].startswith("xor"):
+        #   cnt3 += 1
       
       x1 = round(cnt1 / num_func, 4)
       x2 = round(cnt2 / total_insn, 5)
-      x3 = round(cnt3 / total_insn, 5)
+      
       
     elif arch == "x86_64": ##! renew
       cnt = lst.count("mov RBP, RSP")
@@ -290,14 +286,15 @@ class Binary:
         self.arch, self.num_func, self.compiler, self.total_insn]
     return row
 
-## =============================================================================
+
+##! ============================================================================
 
 
 def foo(file_name, dump_path, arch, dataset_rows):
   pkl_path = os.path.join("pkl", arch)
   pkl_file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
   
-  use_pickle = True
+  use_pickle = False
   if use_pickle:
     binary = read_pickle(pkl_file_path)
   else:

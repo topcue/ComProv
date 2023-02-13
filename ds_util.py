@@ -23,7 +23,6 @@ def get_opcode(insn: str):
 ##! ============================================================================
 
 def parse_functions(file_path):
-  ##! DEBUG
   data = read_file(file_path)
   if not data[0]: data = data[1:]
   tmp_funcs = {}
@@ -34,14 +33,12 @@ def parse_functions(file_path):
   ## in particular, in the mips architecture, the main() function
   ## is inlined here by optimization
   start_ptr = -1
-  if is_symbol(data[0]) or not data[0]:
-    start_ptr = 0
+  if is_symbol(data[0]) or not data[0]: start_ptr = 0
   else:
     next_idx = 0
     for curr_idx in range(0, max_len):
       line = data[curr_idx]
-      if not line:
-        break
+      if not line: break
       next_idx += 1
     tmp_funcs["<!_dummy_func>"] = data[0:next_idx]
     start_ptr = next_idx + 1
@@ -55,8 +52,7 @@ def parse_functions(file_path):
       next_idx = curr_idx + 1
       while data[next_idx]: next_idx += 1
       tmp_funcs[curr_func_name] = data[curr_idx+1:next_idx]
-      ##! skip empty string after end of single function
-      curr_idx = next_idx + 1
+      curr_idx = next_idx + 1 ##! skip empty string after end of single function
     else:
       eprint("parse error!")
 
@@ -91,7 +87,6 @@ def filter(binary, DEBUG=False):
     weak_filter = ["<__do_global_dtors_aux>", "<register_tm_clones>", "<deregister_tm_clones>", "<frame_dummy>"]
     prefilter = strong_filter + weak_filter
   elif arch in ["arm_64"]:
-    ## TODO:
     prefilter = [""]
   elif arch in ["x86_32", "x86_64", "mips_32", "mips_64"]:
     strong_filter = get_pc_thunk_list
@@ -120,28 +115,10 @@ def filter(binary, DEBUG=False):
           break
       if not is_contain_call:
         func_to_del.append(func_name)
-  # elif arch in ["arm_32"]:
-  #   for func_name, func_insns in funcs.items():
-  #     if len(func_insns) <= 30:
-  #       func_to_del.append(func_name)
-  # elif arch in ["arm_64"]:
-  #   for func_name, func_insns in funcs.items():
-  #     if len(func_insns) > 30: continue
-  #     is_contain_call = False
-  #     for insn in func_insns:
-  #       if insn.startswith("b"):
-  #         is_contain_call = True
-  #         break
-  #     if not is_contain_call:
-  #       func_to_del.append(func_name)
 
   func_to_del = list(set(func_to_del))
 
-  ##! TODO: Fix me
   for func_name in func_to_del:
-    # print("[!]", func_name)
-    # for insn in funcs[func_name]:
-    #   print(insn["Insn"])
     del funcs[func_name]
 
   lst = funcs_to_list(funcs)
