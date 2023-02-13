@@ -7,7 +7,6 @@ ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64", "mips
 
 ##! Directories composed of package names are located in the src_path.
 def flatten(src_dir_path, dst_dir_path):
-  p = get_pool()
   os.system("mkdir -p %s" % (dst_dir_path))
   
   for package_dir_name in os.listdir(src_dir_path):
@@ -15,13 +14,9 @@ def flatten(src_dir_path, dst_dir_path):
     ##! cp occurs 'Argument list too long error'
     cmd = "for i in %s/*; do cp \"$i\" %s; done" % (package_dir_path, dst_dir_path)
     print("[*]", package_dir_name)
-
-    p.apply_async(func=exec_cmd, args=(cmd, ))
-  end_pool(p)
-
+    os.system(cmd)
 
 def rename(src_dir_path, dst_dir_path):
-  p = get_pool()
   os.system("mkdir -p %s" % (dst_dir_path))
   
   file_names = os.listdir(src_dir_path)
@@ -44,9 +39,7 @@ def rename(src_dir_path, dst_dir_path):
     src_file_path = os.path.join(src_dir_path, file_name)
     dst_file_path = os.path.join(dst_dir_path, new_name)
     cmd = "mv %s %s" % (src_file_path, dst_file_path)
-    
-    p.apply_async(func=exec_cmd, args=(cmd, ))
-  end_pool(p)
+    os.system(cmd)
 
 
 def dump(src_dir_path, dst_dir_path):
@@ -126,10 +119,8 @@ def truncate(src_dir_path, dst_dir_path):
 def main():
   # flatten("storage/original", "storage/binary/flatten")
   # rename("storage/binary/flatten", "storage/binary/renamed")
-
-  ##! dup here: renamed -> renamed(unique)
-
-  # dump("storage/binary/unique", "storage/assembly/dump") ##! <- here
+  ##! remove dup here (renamed -> unique)
+  # dump("storage/binary/unique", "storage/assembly/dump")
   # truncate("storage/assembly/dump", "storage/assembly/truncate")
   pass
 
