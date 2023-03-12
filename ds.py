@@ -15,16 +15,19 @@ dataset_header = ["file_name", "optmz", "x1", "x2", "x3", "x4", "x5", "x6",  "xi
 
 def get_bracket_operand(x):
   ## e.g.) "mov A, B, [C]" -> return "C"
-  return x.split('[', 1)[1].split(']')[0]
+  if '[' not in x:
+    return ""
+  else:
+    return x.split('[', 1)[1].split(']')[0]
 
 ##! ============================================================================
 
 class Binary:
   def __init__(self, name, path, arch):
     funcs = parse_functions(path)
-    lst = funcs_to_list(funcs)
+    insns = get_insns(funcs)
     self.name, self.path, self.arch = name, path, arch
-    self.lst, self.funcs = lst, funcs
+    self.funcs, self.insns = funcs, insns
     self.get_general_info()
 
 
@@ -32,9 +35,9 @@ class Binary:
     name = self.name
     self.compiler = get_compiler(name) ## TODO: Remove me
     self.optmz = get_optmz(name)
-    self.total_insn = len(self.lst)
+    self.total_insn = len(self.insns)
     self.num_func = len(self.funcs.keys())
-
+    
 
   # def get_reg(self, insn):
   #   if self.arch == "x86_64": reg_set = ()
@@ -57,7 +60,7 @@ class Binary:
 
 
   def get_xs(self):
-    lst = self.lst
+    insns = self.insns
     funcs = self.funcs
     num_func = self.num_func
     arch = self.arch
@@ -65,43 +68,100 @@ class Binary:
     x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
 
     if arch == "x86_32":
-      cnt1, cnt2, cnt3, cnt4, cnt5 = 0, 0, 0, 0, 0
-      for insn in lst:
-        if insn["Insn"] == "mov ebp, esp":
-          cnt1 -= 1
-        if insn["Insn"] == "nop":
-          cnt2 += 2
-        
-        # if insn["Insn"].startswith("cmp") and \
-        #    insn["Insn"].endswith(", 0"):
-        #   cnt3 -= 1
-        # elif insn["Insn"].startswith("test"):
-        #   cnt3 += 1
+      ##! 1) frame pointer omitting
+      cnt_save_fp = insns.count("mov ebp, esp")
+      self.xi = round(cnt_save_fp / num_func, 4)
+      
+      
+      ##! 2) callee-saved register
+      eax, ebx, ecx, edx, esi, edi = 0, 0, 0, 0, 0, 0
+      for insn in insns:
+        eax += insn.count("eax")
+        ebx += insn.count("ebx")
+        ecx += insn.count("ecx")
+        edx += insn.count("edx")
+        esi += insn.count("esi")
+        edi += insn.count("edi")
+      caller_save = eax + ecx + edx
+      callee_save = ebx + esi + edi
+      x1 = round(callee_save / caller_save, 4)
 
-        # if insn["Insn"].startswith("mov") and \
-        #   "ptr" not in insn["Insn"] and \
-        #    insn["Insn"].endswith(", 0"):
-        #   cnt3 -= 1
-        # elif insn["Insn"].startswith("xor"):
-        #   cnt3 += 1
+      ##! 2.1) push
+      cnt_total, cnt = 0, 0
+      for insn in insns:
+        if insn.startswith("push dword"):
+          cnt_total += 1
+          if insn == "push dword ptr [eax]":
+            cnt += 1
+          else:
+            cnt -= 1
+          
+          # op = get_bracket_operand(insn)
+          # cnt_total += 1
+          # if op.startswith("ebp"):
+          #   cnt += 1
+      x2 = round(cnt / cnt_total, 4)
+      print(x2)
+    
+
+      ##! 3) memory access
+      # res = []
+      # for func_name, insns in funcs.items():
+      #   # print("\n[*]", func_name)
+      #   op_list = []
+      #   for insn in insns:
+      #     if insn.startswith("nop"): continue
+      #     if insn.startswith("push"): continue
+      #     if not "[" in insn: continue
+      #     op = get_bracket_operand(insn)
+      #     if op == "esp": continue
+      #     op_list.append(op)
+        
+      #   d = {i:op_list.count(i) for i in op_list}
+      #   d = {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
+      #   s = sum(d.values())
+        
+      #   f = 0
+      #   for k, v in d.items():
+      #     if k.startswith("ebp"):
+      #       if v >= 2: f += v
+      #       else: f -= v
+      #     else:
+      #       f -= v
+        
+      #   x = round(f / s, 2) if s else 0
+      #   res.append(x)
+    
+      # x2 = round(sum(res) / len(res), 4)
+
+
+      ##! 4)
+      # cnt_cmp, cnt_else, cnt_ebp = 0, 0, 0
+      # for insn in insns:
+      #   if insn.startswith("cmp"):
+      #     cnt_cmp += 1
+      #     if "ebp" in insn:
+      #       cnt_ebp += 1
+      #     else:
+      #       cnt_else += 1
       
-      x1 = round(cnt1 / num_func, 4)
-      x2 = round(cnt2 / total_insn, 5)
-      
-      
+      # x1 = round(cnt_ebp / cnt_cmp, 4)
+
+
+        
     elif arch == "x86_64": ##! renew
-      cnt = lst.count("mov RBP, RSP")
+      cnt = insns.count("mov RBP, RSP")
       x1 = round(cnt / num_func, 4)
     elif arch in ["mips_32"]: ##! renew
-      cnt = lst.count("or fp, sp, r0")
+      cnt = insns.count("or fp, sp, r0")
       x1 = round(cnt / num_func, 4)
     elif arch == "mips_64": ##! renew
-      cnt = lst.count("or sp, s8, r0")
+      cnt = insns.count("or sp, s8, r0")
       x1 = round(cnt / num_func, 4)
     elif arch == "arm_32": ##! renew
       cnt1, cnt2, cnt3, cnt4, cnt5, cnt6 = 0, 0, 0, 0, 0, 0
       
-      # for insn in lst:
+      # for insn in insns:
       #   ##! good
       #   ##! gcc랑 clang이랑 scale이 다름. scale만 해결하면 dicision boundary는 깔끔함
       #   if "r0, [fp" in insn:
@@ -128,7 +188,7 @@ class Binary:
 
       ##! ===================================================
       cnt_ld = 0
-      for insn in lst:
+      for insn in insns:
         if insn.startswith("ldr"):
           cnt_ld += 1
           if insn.startswith("ldr r0, [fp"):
@@ -143,7 +203,7 @@ class Binary:
       cnt_st, cnt_stp = 0, 0
       cnt_x29 = 0
 
-      for insn in lst:
+      for insn in insns:
         if insn.startswith("ld"):
           cnt_ld += 1
           if insn.startswith("ldp"):
@@ -167,7 +227,7 @@ class Binary:
       x2 = round((cnt_stp + cnt_ldp) / (cnt_st + cnt_ld), 2)
       x3 = round((cnt_stp - cnt2) / cnt_st, 2) ##! clang 100
 
-      # x4 = round(lst.count("ldr x0, [x0]")/num_func, 2) ##! gcc 85
+      # x4 = round(insns.count("ldr x0, [x0]")/num_func, 2) ##! gcc 85
 
       # x3 = round(cnt_x29 / self.total_insn, 2) ##! clang 99, gcc 94
 
@@ -270,10 +330,9 @@ class Binary:
     self.xi = xi
 
 
-  def get_row(self):
+  def get_rows(self):
     ##! init
-    x1, x2, x3, x4, x5, x6 = -1, -1, -1, -1, -1, -1
-    self.x1, self.x2, self.x3, self.x4, self.x5, self.x6 = x1, x2, x3, x4, x5, x6
+    self.x1, self.x2, self.x3, self.x4, self.x5, self.x6 = -1, -1, -1, -1, -1, -1
     self.xi = -1
     
     self.get_xs()
@@ -294,7 +353,7 @@ def foo(file_name, dump_path, arch, dataset_rows):
   pkl_path = os.path.join("pkl", arch)
   pkl_file_path = os.path.join(pkl_path, file_name.replace(".txt", ".pkl"))
   
-  use_pickle = False
+  use_pickle = True
   if use_pickle:
     binary = read_pickle(pkl_file_path)
   else:
@@ -302,16 +361,21 @@ def foo(file_name, dump_path, arch, dataset_rows):
     binary = Binary(file_name, file_path, arch)
     binary = filter(binary, False)
     ##! Comment out if not needed
-    write_pickle(pkl_file_path, binary)
-    return
+    # write_pickle(pkl_file_path, binary)
+    # with open("filt/" + file_name, "w") as f:
+    #   for func_name, insns in binary.funcs.items():
+    #     f.write(func_name + '\n')
+    #     for insn in insns: f.write("%s\n" % (insn))
+    #     f.write('\n')
+    # return
   
   print("[+]", binary.name)
   
-  row = binary.get_row()
+  row = binary.get_rows()
   dataset_rows.append(row)
 
 
-def build_dataset(arch: str):
+def build_dataset(arch: str, debug: str):
   os.system("mkdir -p %s" % (os.path.join("pkl", arch)))
   
   dump_path = "storage/assembly/truncate/%s" % (arch)
@@ -320,19 +384,26 @@ def build_dataset(arch: str):
   dataset_rows = mp.Manager().list()
   p = get_pool()
   
-  for file_name in file_names:
-    p.apply_async(func=foo, args=(file_name, dump_path, arch, dataset_rows, ))
-  end_pool(p)
+  if debug == 'd':
+    file_names = ["spell-1.1_spell_gcc-7.3.0_x86_32_O0.txt", "spell-1.1_spell_clang-7.0_x86_32_O0.txt", "spell-1.1_spell_gcc-7.3.0_x86_32_O1.txt", "spell-1.1_spell_clang-7.0_x86_32_O1.txt", "spell-1.1_spell_gcc-7.3.0_x86_32_O2.txt", "spell-1.1_spell_clang-7.0_x86_32_O2.txt", "spell-1.1_spell_gcc-7.3.0_x86_32_O3.txt", "spell-1.1_spell_clang-7.0_x86_32_O3.txt", "spell-1.1_spell_gcc-7.3.0_x86_32_Os.txt", "spell-1.1_spell_clang-7.0_x86_32_Os.txt", "spell-1.1_spell_gcc-7.3.0_x86_32_Of.txt", "spell-1.1_spell_clang-7.0_x86_32_Of.txt"]
+    for file_name in file_names:
+      foo(file_name, dump_path, arch, dataset_rows)
+  else:
+    for file_name in file_names:
+      if file_name[0] <= 'c' or file_name[0] > 'i': continue
+      p.apply_async(func=foo, args=(file_name, dump_path, arch, dataset_rows, ))
+    end_pool(p)
 
   dataset_path = "dataset/dataset_{}.csv".format(arch)
   write_dataset(dataset_path, dataset_rows, dataset_header)
-  os.system("cp %s %s" % (dataset_path, "/home/topcue/Dropbox/"))
+  os.system("cp %s %s" % (dataset_path, "/home/topcue/OneDrive/Sync/"))
 
 
 if __name__ == "__main__":
   if len(sys.argv) < 2: eprint("Arg Err!")  
-  arg = sys.argv[1]
-  build_dataset(arg)
+  arch = sys.argv[1]
+  debug = sys.argv[2]
+  build_dataset(arch, debug)
 
 
 # EOF
