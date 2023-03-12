@@ -56,24 +56,27 @@ def parse_functions(file_path):
     else:
       eprint("parse error!")
 
+  ##! step3: formatting
   funcs = {}
-  for symbol, insns in tmp_funcs.items():
-    new_symbol = symbol.split(" :: ")[-1]
+  for func_name, lines in tmp_funcs.items():
+    new_func_name = func_name.split(" :: ")[-1]
     new_insns = []
-    for insn in insns:
-      spl = insn.split(" :: ")
-      new_insn = {"Addr": spl[1], "Insn": spl[2].replace('\t', ' ')}
-      new_insns.append(new_insn)
-    funcs[new_symbol] = new_insns
+    for line in lines:
+      spl = line.split(" :: ")
+      # new_insn = {"Addr": spl[1], "Insn": spl[2].replace('\t', ' ')}
+      insn = spl[2].replace('\t', ' ')
+      new_insns.append(insn)
+    funcs[new_func_name] = new_insns
 
   return funcs
 
 
-def funcs_to_list(funcs):
-  lst = []
+def get_insns(funcs):
+  insns = []
   for func_insns in funcs.values():
-    lst.extend(func_insns)
-  return lst
+    insns.extend(func_insns)
+
+  return insns
 
 
 def filter(binary, DEBUG=False):
@@ -100,30 +103,30 @@ def filter(binary, DEBUG=False):
     if intrinsic in function_symbols:
       del funcs[intrinsic]
 
-  if arch in ["x86_32", "x86_64"]:
-    call_insn = ("call")
-  elif arch in ["mips_32", "mips_64"]:
-    call_insn = ("jal") ##! jal or jalr
+  ##! 2) small functions
+  # if arch in ["x86_32", "x86_64"]:
+  #   call_insn = ("call")
+  # elif arch in ["mips_32", "mips_64"]:
+  #   call_insn = ("jal") ##! jal or jalr
 
-  if arch in ["x86_32", "x86_64", "mips_32", "mips_64"]:
-    for func_name, func_insns in funcs.items():
-      if len(func_insns) > 30: continue
-      is_contain_call = False
-      for insn in func_insns:
-        if insn["Insn"].startswith(call_insn):
-          is_contain_call = True
-          break
-      if not is_contain_call:
-        func_to_del.append(func_name)
+  # if arch in ["x86_32", "x86_64", "mips_32", "mips_64"]:
+  #   for func_name, func_insns in funcs.items():
+  #     if len(func_insns) > 30: continue
+  #     is_contain_call = False
+  #     for insn in func_insns:
+  #       if insn.startswith(call_insn):
+  #         is_contain_call = True
+  #         break
+  #     if not is_contain_call:
+  #       func_to_del.append(func_name)
 
-  func_to_del = list(set(func_to_del))
+  # func_to_del = list(set(func_to_del))
 
-  for func_name in func_to_del:
-    del funcs[func_name]
+  # for func_name in func_to_del:
+  #   del funcs[func_name]
 
-  lst = funcs_to_list(funcs)
+  binary.insns = get_insns(funcs)
   binary.funcs = funcs
-  binary.lst = lst
   binary.get_general_info()
 
   ##! DEBUG: write filtered file

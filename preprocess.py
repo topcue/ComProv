@@ -3,7 +3,8 @@ from util import *
 import os
 
 ##! Suppose as mips eq mipseb
-ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
+# ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64", "mipseb_32", "mipseb_64"]
+ARCH_LIST = ["arm_32", "arm_64", "x86_32", "x86_64", "mips_32", "mips_64"]
 
 ##! Directories composed of package names are located in the src_path.
 def flatten(src_dir_path, dst_dir_path):
@@ -50,16 +51,18 @@ def dump(src_dir_path, dst_dir_path):
   
   objdump_path = "tools/llvm-objdump"
   opts = "-d --section=.text --no-show-raw-insn --no-print-imm-hex -M intel"
-  cmd_base = "%s %s  %s > %s" % (objdump_path, opts)
-
-  file_names = os.listdir(src_dir_path)
-  file_names.sort()
-  for file_name in file_names:
-    print("[*] objdump:", file_name)
-    file_path = os.path.join(src_dir_path, file_name)
-    target_path = os.path.join(dst_dir_path, arch, file_name.replace(".elf", ".txt"))
-    cmd = cmd_base % (file_path, target_path)
-    p.apply_async(func=exec_cmd, args=(cmd, ))
+  cmd_base = "%s %s %s > %s" % (objdump_path, opts, "%s", "%s")
+  
+  for arch in ARCH_LIST:
+    src_arch_dir_path = os.path.join(src_dir_path,  arch)
+    file_names = os.listdir(src_arch_dir_path)
+    file_names.sort()
+    for file_name in file_names:
+      print("[*] objdump:", file_name)
+      file_path = os.path.join(src_dir_path, arch, file_name)
+      target_path = os.path.join(dst_dir_path, arch, file_name.replace(".elf", ".txt"))
+      cmd = cmd_base % (file_path, target_path)
+      p.apply_async(func=exec_cmd, args=(cmd, ))
   end_pool(p)
 
 

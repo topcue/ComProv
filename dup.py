@@ -100,7 +100,7 @@ def build_dup_list(BASE_PATH):
           hash_tag = get_hash(file_path)
           row.append(hash_tag[:8])
         else:
-          ##! If dataset is incomplete, use random number.
+          ##! If dataset is incomplete, use random number. (e.g. gsl)
           ##! But the current code assumes a complete dataset.
           eprint("not exist binary error: %s" % file_path)
           row.append(str(random.random()))
